@@ -2,8 +2,8 @@ package pop3;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -15,7 +15,8 @@ public class ClientTest {
 
     public static void main(String[] args)
     {
-        InputStream input   = null;
+        BufferedReader input   = null;
+        PrintStream output = null;
    
         try
         {
@@ -23,11 +24,21 @@ public class ClientTest {
             _socket = new Socket(InetAddress.getByName("localhost"), _port);
 
             // Open stream
-            input = _socket.getInputStream();
+            input = new BufferedReader(new InputStreamReader(_socket.getInputStream()));
+            output = new PrintStream(_socket.getOutputStream());
 
             // Show the server response
-            String response = new BufferedReader(new InputStreamReader(input)).readLine();
-            System.out.println("Server message: " + response);
+            String reponse;
+			if((reponse = input.readLine()) != null){
+				System.out.println("Serveur message: " + reponse);
+			}
+            
+            output.println("APOP test test");
+            
+            if((reponse = input.readLine()) != null){
+				System.out.println("Serveur message: " + reponse);
+			}
+                        
         }
         catch (UnknownHostException e)
         {
