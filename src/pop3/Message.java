@@ -7,14 +7,6 @@ public class Message {
 	private String corps;
 	private Boolean marque;
 	
-	public Message(int numero, int taille ,String corps, Boolean marque) {
-		this.numero = numero;
-		this.tailleOctets = taille;
-		this.corps = corps;
-		this.marque = marque;
-	}
-
-	
 	public int getNumero() {
 		return numero;
 	}

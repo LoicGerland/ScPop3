@@ -104,6 +104,7 @@ public class Serveur {
 				
 				this.etat = Etat.TRANSACTION;
 				this.afficherEtat();
+				this.verrouMessages = LireFichiers.LireMessages(id[1]);
 				this.output.println("+OK Bonjour "+ id[1]);
 			}
 			else {
@@ -120,23 +121,37 @@ public class Serveur {
 	private void transaction(String requete) {
 		
 		if(requete.startsWith("STAT")) {
-			this.output.println("+OK " +this.verrouMessages.size() + " " + "Taille en octet");
+			this.output.println("+OK " + this.verrouMessages.size() + " " + "Taille en octet");
 		}
 		else if(requete.startsWith("LIST")) {
-			//TODO récupération du paramètre
+			String [] params = requete.split(" ");
 			this.output.println("+OK " + this.verrouMessages.size() + " messages" + "(" + "Taille en octets" + ")");
 		}
 		else if(requete.startsWith("RETR")) {
-			//TODO récupération du paramètre
+			String [] params = requete.split(" ");
 		}
 		else if (requete.startsWith("DELE")) {
-			//TODO récupération du paramètre 
+			String [] params = requete.split(" ");
+			Message m = this.verrouMessages.get(Integer.parseInt(params[1]));
+			
+			if(m == null) {
+				this.output.println("-ERR numero de message invalide");
+			} else if (m.getMarque()) {
+				this.output.println("-ERR message " + params[1] + " déjà supprimé");
+			} else {
+				m.setMarque(true);
+				this.output.println("+OK message " + params[1] + " supprimé");
+			}
 		}
 		else if (requete.startsWith("NOOP")) {
 			this.output.println("+OK");
 		}
 		else if (requete.startsWith("RSET")) {
-			
+			for (Message m : this.verrouMessages) {
+				if(!m.getMarque()) {
+					m.setMarque(false);
+				}
+			}
 		}
 		else if (requete.startsWith("QUIT")) {
 			this.etat = Etat.MISEAJOUR;
