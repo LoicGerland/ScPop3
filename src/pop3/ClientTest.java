@@ -1,8 +1,10 @@
 package pop3;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -16,7 +18,7 @@ public class ClientTest {
     public static void main(String[] args)
     {
         BufferedReader input   = null;
-        PrintStream output = null;
+        BufferedWriter output = null;
    
         try
         {
@@ -25,7 +27,7 @@ public class ClientTest {
 
             // Open stream
             input = new BufferedReader(new InputStreamReader(_socket.getInputStream()));
-            output = new PrintStream(_socket.getOutputStream());
+            output = new BufferedWriter(new OutputStreamWriter(_socket.getOutputStream()));
 
             // Show the server response
             String reponse;
@@ -33,10 +35,53 @@ public class ClientTest {
 				System.out.println("Serveur message: " + reponse);
 			}
             
-            output.println("APOP test test");
+            output.write("APOP test test\r\n");
+            output.flush();
             
             if((reponse = input.readLine()) != null){
 				System.out.println("Serveur message: " + reponse);
+			}
+            
+            output.write("STAT\r\n");
+            output.flush();
+            
+            if((reponse = input.readLine()) != null){
+				System.out.println("Serveur message: " + reponse);
+			}
+            
+            output.write("LIST\r\n");
+            output.flush();
+            if((reponse = input.readLine()) != null){
+				System.out.println("Serveur message: " + reponse);
+				int nbMessages = Integer.parseInt(reponse.split(" ")[1]);
+				for(int i=0;i<=nbMessages;i++) {
+					reponse = input.readLine();
+					System.out.println("Serveur message: " + reponse);
+				}
+			}
+            
+            output.write("RETR 3\r\n");
+            output.flush();
+            if((reponse = input.readLine()) != null){
+				System.out.println("Serveur message: " + reponse);
+				if(reponse.startsWith("+OK")) {
+					for(int i=0;i<2;i++) {
+						reponse = input.readLine();
+						System.out.println("Serveur message: " + reponse);
+					}
+				}
+			}
+            
+            output.write("RETR 4\r\n");
+            output.flush();
+            if((reponse = input.readLine()) != null){
+				System.out.println("Serveur message: " + reponse);
+				if(reponse.startsWith("+OK")) {
+					for(int i=0;i<2;i++) {
+						reponse = input.readLine();
+						System.out.println("Serveur message: " + reponse);
+					}
+				}
 			}
                         
         }

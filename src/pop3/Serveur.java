@@ -1,15 +1,12 @@
 package pop3;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.oracle.jrockit.jfr.RequestableEvent;
 
 import pop3.Commun.Etat;
 
@@ -19,21 +16,22 @@ public class Serveur {
 
 	private ServerSocket sc;
 	private BufferedReader input;
-	private PrintStream output;
+	private BufferedWriter output;
 	private Etat etat;
 	private Boolean run;
-	private List<Message> verrouMessages;
+	private ListeMessages verrouMessages;
+	private String identifiantClient;
 
 	public Serveur() throws IOException {
 		this.sc = new ServerSocket(PORT);
 		this.etat = Etat.INITIALISATION;
 		this.run = true;
-		this.verrouMessages = new ArrayList<Message>();
+		this.verrouMessages = new ListeMessages();
 	}
 
 	public void run() {
 
-		System.out.println("Lancement du serveur sur le port : 	"+ sc.getLocalPort());
+		System.out.println("Lancement du serveur " + sc.getInetAddress().getHostAddress() + " sur le port : 	" + sc.getLocalPort());
 		this.afficherEtat();
 
 		try {
@@ -42,14 +40,15 @@ public class Serveur {
 			this.afficherEtat();
 
 			System.out.println("Nouveau client ! Adresse : " + client.getInetAddress() + " Port : " + client.getPort());
-			this.output = new PrintStream(client.getOutputStream());
+			this.output = new BufferedWriter( new OutputStreamWriter(client.getOutputStream()));
 			this.input = new BufferedReader(new InputStreamReader(client.getInputStream()));
 
-			output.println("+OK POP3 server ready");
-			
+			this.output.write("+OK POP3 server ready\r\n");
+			this.output.flush();
+
 			this.etat = Etat.AUTHORISATION;
 			this.afficherEtat();
-
+			
 			while(this.run) {
 				String requete;
 				if((requete = this.input.readLine()) != null){
@@ -75,90 +74,131 @@ public class Serveur {
 		}
 	}
 
-	private void traiterRequete(String requete) {
+	private void traiterRequete(String requete) throws IOException {
 		
 		switch(this.etat) {
 		
 		case AUTHORISATION:
-			this.connexion(requete);
+			this.authentification(requete);
 			break;
 			
 		case TRANSACTION:
 			this.transaction(requete);
 			break;
 			
-		default: this.output.println("-ERR"); 
+		default: this.output.write("-ERR\r\n"); 
 		}
 	}
 	
 	
-	private void connexion(String requete) {
+	private void authentification(String requete) {
 		
+		String sortie = "";
 		if(requete.startsWith("APOP")) {
-			
-			this.etat = Etat.AUTHORISATION;
-			this.afficherEtat();
 			
 			String [] id = requete.split(" ");
 			if(this.checkIdentifiants(id[1], id[2])) {
-				
+				identifiantClient = id[1];
 				this.etat = Etat.TRANSACTION;
 				this.afficherEtat();
-				this.verrouMessages = LireFichiers.LireMessages(id[1]);
-				this.output.println("+OK Bonjour "+ id[1]);
+				this.verrouMessages = LireFichiers.LireMessages(identifiantClient);
+				sortie = "+OK Bonjour "+ identifiantClient;
 			}
 			else {
-				this.output.println("-ERR Identifiants incorrects");
+				sortie = "-ERR Identifiants incorrects";
 			}
 		}
 		else if (requete.startsWith("QUIT")) {
-			
-			this.output.println("+OK POP3 server signing off");
+			sortie = "+OK POP3 server signing off";
 			this.run = false;
+		}
+		
+		try {
+			this.output.write(sortie+"\r\n");
+			this.output.flush();
+		} catch (IOException e) {
+			//TODO
+			e.printStackTrace();
 		}
 	}
 	
 	private void transaction(String requete) {
 		
-		if(requete.startsWith("STAT")) {
-			this.output.println("+OK " + this.verrouMessages.size() + " " + "Taille en octet");
-		}
-		else if(requete.startsWith("LIST")) {
-			String [] params = requete.split(" ");
-			this.output.println("+OK " + this.verrouMessages.size() + " messages" + "(" + "Taille en octets" + ")");
-		}
-		else if(requete.startsWith("RETR")) {
-			String [] params = requete.split(" ");
-		}
-		else if (requete.startsWith("DELE")) {
-			String [] params = requete.split(" ");
-			Message m = this.verrouMessages.get(Integer.parseInt(params[1]));
+		try {
 			
-			if(m == null) {
-				this.output.println("-ERR numero de message invalide");
-			} else if (m.getMarque()) {
-				this.output.println("-ERR message " + params[1] + " déjà supprimé");
-			} else {
-				m.setMarque(true);
-				this.output.println("+OK message " + params[1] + " supprimé");
+			String [] params;
+			String sortie = "+OK ";
+			
+			if(requete.startsWith("STAT")) {
+				sortie += this.verrouMessages.size() + " " + this.verrouMessages.getOctetsTotal();
 			}
-		}
-		else if (requete.startsWith("NOOP")) {
-			this.output.println("+OK");
-		}
-		else if (requete.startsWith("RSET")) {
-			for (Message m : this.verrouMessages) {
-				if(!m.getMarque()) {
-					m.setMarque(false);
+			else if(requete.startsWith("LIST")) {
+				params = requete.split(" ");
+				
+				if(params.length > 1) {
+					if(this.verrouMessages.size() < Integer.parseInt(params[1])) {
+						sortie = "-ERR Le message n'existe pas, seulement " + this.verrouMessages.size() + " messages dans votre boite";
+					} else {
+						Message message = this.verrouMessages.get(Integer.parseInt(params[1])-1);
+						sortie += message.getNumero() + " " + message.getTailleOctets();
+					}
+				} else {
+					sortie += this.verrouMessages.size() + " messages" 
+							+ "(" + this.verrouMessages.getOctetsTotal() + " octets" + ")\n" 
+							+ this.verrouMessages.getTousLesMessages();
 				}
 			}
-		}
-		else if (requete.startsWith("QUIT")) {
-			this.etat = Etat.MISEAJOUR;
+			else if(requete.startsWith("RETR")) {
+				params = requete.split(" ");
+				if(params.length > 1) {
+					if(this.verrouMessages.size() < Integer.parseInt(params[1])) {
+						sortie = "-ERR Le message n'existe pas, seulement " + this.verrouMessages.size() + " messages dans votre boite";
+					} else {
+						Message message = this.verrouMessages.get(Integer.parseInt(params[1])-1);
+						sortie += message.getTailleOctets() + " octets\n" + message.getCorps() + "\n.";
+					}
+				} else {
+					sortie = "-ERR Donne parametre FDP";
+				}
+			}
+			else if (requete.startsWith("DELE")) {
+				params = requete.split(" ");
+				
+				if(this.verrouMessages.size() < Integer.parseInt(params[1])) {
+					sortie = "-ERR Le message n'existe pas, seulement " + this.verrouMessages.size() + " messages dans votre boite";
+				} else {
+					Message message = this.verrouMessages.get(Integer.parseInt(params[1])-1);
+					if (message.getMarque()) {
+						sortie = "-ERR message " + params[1] + " déjà supprimé";
+					} else {
+						message.setMarque(true);
+						sortie += "message " + params[1] + " supprimé";
+					}
+				}
+			}
+			else if (requete.startsWith("NOOP")) {
+				sortie += ""; 
+			}
+			else if (requete.startsWith("RSET")) {
+				for (Message m : this.verrouMessages) {
+					if(!m.getMarque()) {
+						m.setMarque(false);
+					}
+				}
+			}
+			else if (requete.startsWith("QUIT")) {
+				this.etat = Etat.MISEAJOUR;
+				//LireFichiers.SupprimerMessages(this.identifiantClient, this.verrouMessages);
+			}
+			else {
+				sortie = "-ERR Commande inconnue";
+			}
 			
-		}
-		else {
-			this.output.println("-ERR Commande inconnue");
+			this.output.write(sortie+"\r\n");
+			this.output.flush();
+			
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 	
