@@ -72,16 +72,30 @@ public class ClientTest {
 				}
 			}
             
-            output.write("RETR 4\r\n");
+//            output.write("RETR 4\r\n");
+//            output.flush();
+//            if((reponse = input.readLine()) != null){
+//				System.out.println("Serveur message: " + reponse);
+//				if(reponse.startsWith("+OK")) {
+//					for(int i=0;i<2;i++) {
+//						reponse = input.readLine();
+//						System.out.println("Serveur message: " + reponse);
+//					}
+//				}
+//			}
+            
+            output.write("DELE 3\r\n");
             output.flush();
+            
             if((reponse = input.readLine()) != null){
 				System.out.println("Serveur message: " + reponse);
-				if(reponse.startsWith("+OK")) {
-					for(int i=0;i<2;i++) {
-						reponse = input.readLine();
-						System.out.println("Serveur message: " + reponse);
-					}
-				}
+			}
+            
+            output.write("QUIT\r\n");
+            output.flush();
+            
+            if((reponse = input.readLine()) != null){
+				System.out.println("Serveur message: " + reponse);
 			}
                         
         }

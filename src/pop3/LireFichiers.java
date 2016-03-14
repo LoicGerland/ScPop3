@@ -1,11 +1,17 @@
 package pop3;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+
+import com.sun.xml.internal.bind.api.impl.NameConverter.Standard;
 
 public class LireFichiers {
 
@@ -40,32 +46,42 @@ public class LireFichiers {
 		
 		return messages;
 	}
-/*
+
 	public static void SupprimerMessages(String identifiantClient, ListeMessages verrouMessages) {
 		
 		String filePath = new File("").getAbsolutePath();
 		filePath += "/Fichiers/" + identifiantClient + ".txt";
-		
+		String tempFile = new File("").getAbsolutePath();
+		tempFile += "/Fichiers/tmp.txt";
+		File f = new File(filePath);
+        File tmp = new File(tempFile);
+        
 		try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(filePath)));
- 
-            StringBuffer sb = new StringBuffer(); 
-            String line;    
-            int nbLinesRead = 0;       
-            while ((line = reader.readLine()) != null) {
-                if (nbLinesRead != lineNumber) {
-                    sb.append(line + "\n");
-                }
-                nbLinesRead++;
-            }
-            reader.close();
-            BufferedWriter out = new BufferedWriter(new FileWriter(fileName));
-            out.write(sb.toString());
-            out.close();
- 
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
-	}*/
+	        BufferedReader reader = new BufferedReader(new FileReader(filePath));
+	        BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+	
+	        String line;
+	        int i = 0;
+	
+	        while((line = reader.readLine()) != null) {
+	            if(!verrouMessages.get(i).getMarque())
+	            {
+	            	writer.write(line + "\n");
+	            }
+	            i++;
+	        }
+	        
+	        writer.close(); 
+	        reader.close();
+	        
+	        Files.copy(tmp.toPath(), f.toPath(), StandardCopyOption.REPLACE_EXISTING);
+	        //boolean ret = tmp.renameTo(f);
+	        
+	        //System.out.println(tmp.getAbsolutePath() + "  " + ret);
+        
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
 }

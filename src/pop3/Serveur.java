@@ -94,11 +94,13 @@ public class Serveur {
 	private void authentification(String requete) {
 		
 		String sortie = "";
+		String params[];
+		
 		if(requete.startsWith("APOP")) {
 			
-			String [] id = requete.split(" ");
-			if(this.checkIdentifiants(id[1], id[2])) {
-				identifiantClient = id[1];
+			params = requete.split(" ");
+			if(this.checkIdentifiants(params[1], params[2])) {
+				this.identifiantClient = params[1];
 				this.etat = Etat.TRANSACTION;
 				this.afficherEtat();
 				this.verrouMessages = LireFichiers.LireMessages(identifiantClient);
@@ -106,6 +108,37 @@ public class Serveur {
 			}
 			else {
 				sortie = "-ERR Identifiants incorrects";
+			}
+		}
+		else if (requete.startsWith("USER")) {
+			
+			params = requete.split(" ");
+			
+			if(this.checkIdentifiants(params[1])) {
+				this.identifiantClient = params[1];
+				sortie = "+OK Le nom de boite est valide";
+			}
+			else {
+				sortie = "-ERR Nom de boite invalide";
+			}
+		}
+		else if (requete.startsWith("PASS")) {
+			
+			if(this.identifiantClient == null){
+				sortie = "-ERR Commande USER necessaire avant";
+			}
+			else {
+				params = requete.split(" ");
+				
+				if(this.checkIdentifiants(this.identifiantClient, params[1])) {
+					this.etat = Etat.TRANSACTION;
+					this.afficherEtat();
+					this.verrouMessages = LireFichiers.LireMessages(identifiantClient);
+					sortie = "+OK Bonjour "+ identifiantClient;
+				}
+				else {
+					sortie = "-ERR Identifiants incorrects";
+				}
 			}
 		}
 		else if (requete.startsWith("QUIT")) {
@@ -117,7 +150,6 @@ public class Serveur {
 			this.output.write(sortie+"\r\n");
 			this.output.flush();
 		} catch (IOException e) {
-			//TODO
 			e.printStackTrace();
 		}
 	}
@@ -158,22 +190,27 @@ public class Serveur {
 						sortie += message.getTailleOctets() + " octets\n" + message.getCorps() + "\n.";
 					}
 				} else {
-					sortie = "-ERR Donne parametre FDP";
+					sortie = "-ERR Paramètre requis";
 				}
 			}
 			else if (requete.startsWith("DELE")) {
 				params = requete.split(" ");
 				
-				if(this.verrouMessages.size() < Integer.parseInt(params[1])) {
-					sortie = "-ERR Le message n'existe pas, seulement " + this.verrouMessages.size() + " messages dans votre boite";
-				} else {
-					Message message = this.verrouMessages.get(Integer.parseInt(params[1])-1);
-					if (message.getMarque()) {
-						sortie = "-ERR message " + params[1] + " déjà supprimé";
+				if(params.length > 1) {
+					if(this.verrouMessages.size() < Integer.parseInt(params[1])) {
+						sortie = "-ERR Le message n'existe pas, seulement " + this.verrouMessages.size() + " messages dans votre boite";
 					} else {
-						message.setMarque(true);
-						sortie += "message " + params[1] + " supprimé";
+						Message message = this.verrouMessages.get(Integer.parseInt(params[1])-1);
+						if (message.getMarque()) {
+							sortie = "-ERR message " + params[1] + " déjà supprimé";
+						} else {
+							message.setMarque(true);
+							sortie += "message " + params[1] + " supprimé";
+						}
 					}
+				}
+				else {
+					sortie = "-ERR Paramètre requis";
 				}
 			}
 			else if (requete.startsWith("NOOP")) {
@@ -188,7 +225,9 @@ public class Serveur {
 			}
 			else if (requete.startsWith("QUIT")) {
 				this.etat = Etat.MISEAJOUR;
-				//LireFichiers.SupprimerMessages(this.identifiantClient, this.verrouMessages);
+				this.afficherEtat();
+				this.run = false;
+				LireFichiers.SupprimerMessages(this.identifiantClient, this.verrouMessages);
 			}
 			else {
 				sortie = "-ERR Commande inconnue";
@@ -207,6 +246,17 @@ public class Serveur {
 			return false;
 		}
 		else if(identifiant.equals("test") && mdp.equals("test")) {
+			return true;
+		}
+		
+		return false;
+	}
+	
+	private boolean checkIdentifiants(String identifiant) {
+		if(identifiant == null){
+			return false;
+		}
+		else if(identifiant.equals("test")){
 			return true;
 		}
 		
