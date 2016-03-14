@@ -3,24 +3,19 @@ package pop3;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
-import com.sun.xml.internal.bind.api.impl.NameConverter.Standard;
-
-public class LireFichiers {
+public class GestionMessagesFichiers {
 
 	public static ListeMessages LireMessages(String identifiant) {
 		
 		ListeMessages messages = new ListeMessages();
 		String filePath = new File("").getAbsolutePath();
 		filePath += "/Fichiers/" + identifiant + ".txt";
-		
 		
 		try {
 			BufferedReader buff = new BufferedReader(new FileReader(filePath));
@@ -42,12 +37,12 @@ public class LireFichiers {
 			} finally {
 				buff.close();
 			}
-		} catch (IOException ioe) { System.out.println("Erreur IO --" + ioe.toString());}
+		} catch (IOException ioe) { System.out.println("Erreur IO --" + ioe.toString()); }
 		
 		return messages;
 	}
-
-	public static void SupprimerMessages(String identifiantClient, ListeMessages verrouMessages) {
+	
+	public static void SupprimerMessages(String identifiantClient, ListeMessages listeMessages) {
 		
 		String filePath = new File("").getAbsolutePath();
 		filePath += "/Fichiers/" + identifiantClient + ".txt";
@@ -64,7 +59,7 @@ public class LireFichiers {
 	        int i = 0;
 	
 	        while((line = reader.readLine()) != null) {
-	            if(!verrouMessages.get(i).getMarque())
+	            if(!listeMessages.get(i).getMarque())
 	            {
 	            	writer.write(line + "\n");
 	            }
@@ -75,13 +70,7 @@ public class LireFichiers {
 	        reader.close();
 	        
 	        Files.copy(tmp.toPath(), f.toPath(), StandardCopyOption.REPLACE_EXISTING);
-	        //boolean ret = tmp.renameTo(f);
-	        
-	        //System.out.println(tmp.getAbsolutePath() + "  " + ret);
         
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
+		} catch (IOException e) { System.out.println("Erreur IO --" + e.toString());}
 	}
 }

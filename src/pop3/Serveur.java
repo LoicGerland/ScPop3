@@ -12,44 +12,41 @@ import pop3.Commun.Etat;
 
 public class Serveur {
 
-	public final static int PORT = 110;
-
-	private ServerSocket sc;
+	private ServerSocket socket;
 	private BufferedReader input;
 	private BufferedWriter output;
 	private Etat etat;
-	private Boolean run;
-	private ListeMessages verrouMessages;
+	private Boolean running;
+	private ListeMessages listeMessages;
 	private String identifiantClient;
 
-	public Serveur() throws IOException {
-		this.sc = new ServerSocket(PORT);
-		this.etat = Etat.INITIALISATION;
-		this.run = true;
-		this.verrouMessages = new ListeMessages();
+	public Serveur() {
+		
+		try {
+			this.socket = new ServerSocket(Commun.PORT);
+			System.out.println("Lancement du serveur " + socket.getInetAddress().getHostAddress() + " sur le port : 	" + socket.getLocalPort());
+		} catch (IOException e) {
+			System.out.println("Erreur : Instanciation du ServerSocket impossible");
+		}
+		this.running = true;
+		this.setEtat(Etat.INITIALISATION);
+		this.listeMessages = new ListeMessages();
 	}
 
 	public void run() {
 
-		System.out.println("Lancement du serveur " + sc.getInetAddress().getHostAddress() + " sur le port : 	" + sc.getLocalPort());
-		this.afficherEtat();
-
 		try {
-			Socket client = this.sc.accept();
-			this.etat = Etat.CONNEXION;
-			this.afficherEtat();
-
-			System.out.println("Nouveau client ! Adresse : " + client.getInetAddress() + " Port : " + client.getPort());
+			Socket client = this.socket.accept();
 			this.output = new BufferedWriter( new OutputStreamWriter(client.getOutputStream()));
 			this.input = new BufferedReader(new InputStreamReader(client.getInputStream()));
-
+			this.setEtat(Etat.CONNEXION);
+			System.out.println("Nouveau client ! Adresse : " + client.getInetAddress() + " Port : " + client.getPort());
+			
 			this.output.write("+OK POP3 server ready\r\n");
 			this.output.flush();
-
-			this.etat = Etat.AUTHORISATION;
-			this.afficherEtat();
+			this.setEtat(Etat.AUTHORISATION);
 			
-			while(this.run) {
+			while(this.running) {
 				String requete;
 				if((requete = this.input.readLine()) != null){
 					this.traiterRequete(requete);
@@ -59,37 +56,44 @@ public class Serveur {
 			System.out.println("Fin du serveur");
 			
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.out.println("Erreur : Probleme de socket");
 		}
 		finally
 		{
-			try
-			{
-				this.sc.close();
-			}
-			catch (IOException e)
-			{
-				e.printStackTrace();
+			try { this.socket.close(); }
+			catch (IOException e) {
+				System.out.println("Erreur : Probleme de deconnexion de socket");
 			}
 		}
 	}
 
-	private void traiterRequete(String requete) throws IOException {
+	private void traiterRequete(String requete) {
 		
 		switch(this.etat) {
 		
-		case AUTHORISATION:
-			this.authentification(requete);
-			break;
+			case AUTHORISATION:
+				this.authentification(requete);
+				break;
+				
+			case TRANSACTION:
+				this.transaction(requete);
+				break;
+				
+			default: 
+				this.error();
 			
-		case TRANSACTION:
-			this.transaction(requete);
-			break;
-			
-		default: this.output.write("-ERR\r\n"); 
 		}
 	}
 	
+	private void error() {
+		
+		try {
+			this.output.write("-ERR\r\n");
+			this.output.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 	
 	private void authentification(String requete) {
 		
@@ -101,9 +105,8 @@ public class Serveur {
 			params = requete.split(" ");
 			if(this.checkIdentifiants(params[1], params[2])) {
 				this.identifiantClient = params[1];
-				this.etat = Etat.TRANSACTION;
-				this.afficherEtat();
-				this.verrouMessages = LireFichiers.LireMessages(identifiantClient);
+				this.setEtat(Etat.TRANSACTION);
+				this.listeMessages = GestionMessagesFichiers.LireMessages(identifiantClient);
 				sortie = "+OK Bonjour "+ identifiantClient;
 			}
 			else {
@@ -113,8 +116,7 @@ public class Serveur {
 		else if (requete.startsWith("USER")) {
 			
 			params = requete.split(" ");
-			
-			if(this.checkIdentifiants(params[1])) {
+			if(params.length>1 && this.checkIdentifiants(params[1])) {
 				this.identifiantClient = params[1];
 				sortie = "+OK Le nom de boite est valide";
 			}
@@ -129,11 +131,9 @@ public class Serveur {
 			}
 			else {
 				params = requete.split(" ");
-				
 				if(this.checkIdentifiants(this.identifiantClient, params[1])) {
-					this.etat = Etat.TRANSACTION;
-					this.afficherEtat();
-					this.verrouMessages = LireFichiers.LireMessages(identifiantClient);
+					this.setEtat(Etat.TRANSACTION);
+					this.listeMessages = GestionMessagesFichiers.LireMessages(identifiantClient);
 					sortie = "+OK Bonjour "+ identifiantClient;
 				}
 				else {
@@ -143,109 +143,103 @@ public class Serveur {
 		}
 		else if (requete.startsWith("QUIT")) {
 			sortie = "+OK POP3 server signing off";
-			this.run = false;
+			this.running = false;
 		}
 		
 		try {
 			this.output.write(sortie+"\r\n");
 			this.output.flush();
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.out.println("Erreur : Probleme de socket");
 		}
 	}
 	
 	private void transaction(String requete) {
 		
-		try {
+		String [] params;
+		String sortie = "+OK ";
+		
+		if(requete.startsWith("STAT")) {
+			sortie += this.listeMessages.size() + " " + this.listeMessages.getOctetsTotal();
+		}
+		else if(requete.startsWith("LIST")) {
+			params = requete.split(" ");
 			
-			String [] params;
-			String sortie = "+OK ";
+			if(params.length > 1) {
+				if(this.listeMessages.size() < Integer.parseInt(params[1])) {
+					sortie = "-ERR Le message n'existe pas, seulement " + this.listeMessages.size() + " messages dans votre boite";
+				} else {
+					Message message = this.listeMessages.get(Integer.parseInt(params[1])-1);
+					sortie += message.getNumero() + " " + message.getTailleOctets();
+				}
+			} else {
+				sortie += this.listeMessages.size() + " messages" 
+						+ "(" + this.listeMessages.getOctetsTotal() + " octets" + ")\n" 
+						+ this.listeMessages.getTousLesMessages();
+			}
+		}
+		else if(requete.startsWith("RETR")) {
+			params = requete.split(" ");
+			if(params.length > 1) {
+				if(this.listeMessages.size() < Integer.parseInt(params[1])) {
+					sortie = "-ERR Le message n'existe pas, seulement " + this.listeMessages.size() + " messages dans votre boite";
+				} else {
+					Message message = this.listeMessages.get(Integer.parseInt(params[1])-1);
+					sortie += message.getTailleOctets() + " octets\n" + message.getCorps() + "\n.";
+				}
+			} else {
+				sortie = "-ERR Parametre requis";
+			}
+		}
+		else if (requete.startsWith("DELE")) {
+			params = requete.split(" ");
 			
-			if(requete.startsWith("STAT")) {
-				sortie += this.verrouMessages.size() + " " + this.verrouMessages.getOctetsTotal();
-			}
-			else if(requete.startsWith("LIST")) {
-				params = requete.split(" ");
-				
-				if(params.length > 1) {
-					if(this.verrouMessages.size() < Integer.parseInt(params[1])) {
-						sortie = "-ERR Le message n'existe pas, seulement " + this.verrouMessages.size() + " messages dans votre boite";
-					} else {
-						Message message = this.verrouMessages.get(Integer.parseInt(params[1])-1);
-						sortie += message.getNumero() + " " + message.getTailleOctets();
-					}
+			if(params.length > 1) {
+				if(this.listeMessages.size() < Integer.parseInt(params[1])) {
+					sortie = "-ERR Le message n'existe pas, seulement " + this.listeMessages.size() + " messages dans votre boite";
 				} else {
-					sortie += this.verrouMessages.size() + " messages" 
-							+ "(" + this.verrouMessages.getOctetsTotal() + " octets" + ")\n" 
-							+ this.verrouMessages.getTousLesMessages();
-				}
-			}
-			else if(requete.startsWith("RETR")) {
-				params = requete.split(" ");
-				if(params.length > 1) {
-					if(this.verrouMessages.size() < Integer.parseInt(params[1])) {
-						sortie = "-ERR Le message n'existe pas, seulement " + this.verrouMessages.size() + " messages dans votre boite";
+					Message message = this.listeMessages.get(Integer.parseInt(params[1])-1);
+					if (message.getMarque()) {
+						sortie = "-ERR message " + params[1] + " deja supprimÃ©";
 					} else {
-						Message message = this.verrouMessages.get(Integer.parseInt(params[1])-1);
-						sortie += message.getTailleOctets() + " octets\n" + message.getCorps() + "\n.";
-					}
-				} else {
-					sortie = "-ERR Paramètre requis";
-				}
-			}
-			else if (requete.startsWith("DELE")) {
-				params = requete.split(" ");
-				
-				if(params.length > 1) {
-					if(this.verrouMessages.size() < Integer.parseInt(params[1])) {
-						sortie = "-ERR Le message n'existe pas, seulement " + this.verrouMessages.size() + " messages dans votre boite";
-					} else {
-						Message message = this.verrouMessages.get(Integer.parseInt(params[1])-1);
-						if (message.getMarque()) {
-							sortie = "-ERR message " + params[1] + " déjà supprimé";
-						} else {
-							message.setMarque(true);
-							sortie += "message " + params[1] + " supprimé";
-						}
+						message.setMarque(true);
+						sortie += "message " + params[1] + " supprimÃ©";
 					}
 				}
-				else {
-					sortie = "-ERR Paramètre requis";
-				}
-			}
-			else if (requete.startsWith("NOOP")) {
-				sortie += ""; 
-			}
-			else if (requete.startsWith("RSET")) {
-				for (Message m : this.verrouMessages) {
-					if(!m.getMarque()) {
-						m.setMarque(false);
-					}
-				}
-			}
-			else if (requete.startsWith("QUIT")) {
-				this.etat = Etat.MISEAJOUR;
-				this.afficherEtat();
-				this.run = false;
-				LireFichiers.SupprimerMessages(this.identifiantClient, this.verrouMessages);
 			}
 			else {
-				sortie = "-ERR Commande inconnue";
+				sortie = "-ERR Parametre requis";
 			}
-			
+		}
+		else if (requete.startsWith("NOOP")) {
+			sortie += ""; 
+		}
+		else if (requete.startsWith("RSET")) {
+			for (Message m : this.listeMessages) {
+				if(!m.getMarque()) {
+					m.setMarque(false);
+				}
+			}
+		}
+		else if (requete.startsWith("QUIT")) {
+			this.setEtat(Etat.MISEAJOUR);
+			this.running = false;
+			GestionMessagesFichiers.SupprimerMessages(this.identifiantClient, this.listeMessages);
+		}
+		else {
+			sortie = "-ERR Commande inconnue";
+		}
+		
+		try {
 			this.output.write(sortie+"\r\n");
 			this.output.flush();
-			
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.out.println("Erreur : Probleme de socket");
 		}
 	}
 	
 	private boolean checkIdentifiants(String identifiant, String mdp) {
-		if(identifiant == null || mdp == null) {
-			return false;
-		}
-		else if(identifiant.equals("test") && mdp.equals("test")) {
+		if(identifiant.equals("test") && mdp.equals("test")) {
 			return true;
 		}
 		
@@ -253,17 +247,19 @@ public class Serveur {
 	}
 	
 	private boolean checkIdentifiants(String identifiant) {
-		if(identifiant == null){
-			return false;
-		}
-		else if(identifiant.equals("test")){
+		if(identifiant.equals("test")){
 			return true;
 		}
 		
 		return false;
 	}
 
-	private void afficherEtat() {
+	public Etat getEtat() {
+		return etat;
+	}
+
+	public void setEtat(Etat etat) {
+		this.etat = etat;
 		System.out.println("Etat du serveur : " + this.etat);
 	}
 }

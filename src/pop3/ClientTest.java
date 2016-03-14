@@ -5,7 +5,6 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -22,7 +21,7 @@ public class ClientTest {
    
         try
         {
-            _port   = 110;
+            _port   = Commun.PORT;
             _socket = new Socket(InetAddress.getByName("localhost"), _port);
 
             // Open stream
