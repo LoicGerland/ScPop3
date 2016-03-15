@@ -9,6 +9,8 @@ import java.io.IOException;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.JButton;
@@ -17,10 +19,13 @@ public class Vue extends JFrame implements ActionListener {
 	private static final long serialVersionUID = -1374851023131011832L;
 	
 	private JPanel contentPane;
-	private JPanel clientsPane;
 	private JButton btnStartStop;
 	private JLabel statusLabel;
 	private JLabel adresseLabel;
+	private JTextArea txtClientArea;
+    private JTextArea txtInfoArea;
+    private JScrollPane scrollClientPane;
+    private JScrollPane scrollInfoPane;
 	
 	private Serveur serveur;
 	
@@ -40,7 +45,7 @@ public class Vue extends JFrame implements ActionListener {
 	public Vue() {
 		setTitle("Serveur");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setSize(600, 550);
+		setSize(550, 400);
 		setLocationRelativeTo(null);
         
 		contentPane = new JPanel();
@@ -59,16 +64,21 @@ public class Vue extends JFrame implements ActionListener {
 		contentPane.add(statusLabel);
         
 		btnStartStop = new JButton("Lancer");
-		btnStartStop.setBounds(450, 10, 100, 30);
+		btnStartStop.setBounds(445, 10, 100, 30);
 		btnStartStop.addActionListener(this);
 		contentPane.add(btnStartStop);
 		
-		clientsPane = new JPanel();
-		clientsPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-		clientsPane.setLayout(null);
-		clientsPane.setBounds(20, 60, 530, 400);
-		clientsPane.setBackground(Color.white);
-		contentPane.add(clientsPane);
+		txtClientArea = new JTextArea();
+        txtClientArea.setEditable(false);
+        scrollClientPane = new JScrollPane(txtClientArea);
+        scrollClientPane.setBounds(10, 50, 530, 100);
+		contentPane.add(scrollClientPane);
+		
+		txtInfoArea = new JTextArea();
+		txtInfoArea.setEditable(false);
+        scrollInfoPane = new JScrollPane(txtInfoArea);
+        scrollInfoPane.setBounds(10, 150, 530, 220);
+		contentPane.add(scrollInfoPane);
 	}
 
 	@Override
