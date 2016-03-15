@@ -17,4 +17,8 @@ public class Commun {
 		Etat(String nom) { this.nom = nom; }
 		public String toString() { return nom; }
 	}
+	
+	public static void sop(String string) {
+		System.out.println(string);
+	}
 }
