@@ -18,7 +18,4 @@ public class Commun {
 		public String toString() { return nom; }
 	}
 	
-	public static void sop(String string) {
-		System.out.println(string);
-	}
 }

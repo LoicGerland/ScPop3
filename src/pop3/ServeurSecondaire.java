@@ -11,6 +11,7 @@ import pop3.Commun.Etat;
 
 public class ServeurSecondaire implements Runnable{
 
+	private Vue vue;
 	private final Socket clientSocket;
 	private BufferedReader input;
 	private BufferedWriter output;
@@ -19,12 +20,14 @@ public class ServeurSecondaire implements Runnable{
 	private ListeMessages listeMessages;
 	private String identifiantClient;
 
-	public ServeurSecondaire(Socket clientSocket) {
+	public ServeurSecondaire(Vue vue, Socket clientSocket) {
+		this.vue = vue;
 		this.clientSocket = clientSocket;
 		
 		this.running = true;
 		this.setEtat(Etat.INITIALISATION);
 		this.listeMessages = new ListeMessages();
+		this.identifiantClient = "Inconnu";
 	}
 
 	public void run() {
@@ -33,7 +36,7 @@ public class ServeurSecondaire implements Runnable{
 			this.output = new BufferedWriter( new OutputStreamWriter(clientSocket.getOutputStream()));
 			this.input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 			this.setEtat(Etat.CONNEXION);
-			System.out.println("Nouveau client ! Adresse : " + clientSocket.getInetAddress() + " Port : " + clientSocket.getPort());
+			this.vue.sop("Nouveau client ! Adresse : " + clientSocket.getInetAddress() + " Port : " + clientSocket.getPort());
 			
 			this.output.write("+OK POP3 server ready\r\n");
 			this.output.flush();
@@ -46,17 +49,17 @@ public class ServeurSecondaire implements Runnable{
 				}
 			}
 		} 
-		catch (IOException e) { System.out.println("Erreur : Probleme de socket"); }
+		catch (IOException e) { this.vue.sop("Erreur : Probleme de socket"); }
 		finally
 		{
 			try { this.clientSocket.close(); }
 			catch (IOException e) {
-				System.out.println("Erreur : Probleme de deconnexion de socket");
+				this.vue.sop("Erreur : Probleme de deconnexion de socket");
 			}
 		}
 	}
 	
-private void traiterRequete(String requete) {
+	private void traiterRequete(String requete) {
 		
 		switch(this.etat) {
 		
@@ -108,6 +111,7 @@ private void traiterRequete(String requete) {
 			if(params.length>1 && this.checkIdentifiants(params[1])) {
 				this.identifiantClient = params[1];
 				sortie = "+OK Le nom de boite est valide";
+
 			}
 			else {
 				sortie = "-ERR Nom de boite invalide";
@@ -139,7 +143,7 @@ private void traiterRequete(String requete) {
 			this.output.write(sortie+"\r\n");
 			this.output.flush();
 		} catch (IOException e) {
-			System.out.println("Erreur : Probleme de socket");
+			this.vue.sop("Erreur : Probleme de socket");
 		}
 	}
 	
@@ -223,7 +227,7 @@ private void traiterRequete(String requete) {
 			this.output.write(sortie+"\r\n");
 			this.output.flush();
 		} catch (IOException e) {
-			System.out.println("Erreur : Probleme de socket");
+			this.vue.sop("Erreur : Probleme de socket");
 		}
 	}
 	
@@ -250,6 +254,14 @@ private void traiterRequete(String requete) {
 	public void setEtat(Etat etat) {
 		this.etat = etat;
 		System.out.println("Etat du serveur : " + this.etat);
+	}
+	
+	public String getIdentifiantClient() {
+		return identifiantClient;
+	}
+
+	public Socket getClientSocket() {
+		return clientSocket;
 	}
 }
 

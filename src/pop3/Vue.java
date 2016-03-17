@@ -1,10 +1,8 @@
 package pop3;
 
 import java.awt.Color;
-import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -28,19 +26,6 @@ public class Vue extends JFrame implements ActionListener {
     private JScrollPane scrollInfoPane;
 	
 	private Serveur serveur;
-	
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					Vue frame = new Vue();
-					frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}
 
 	public Vue() {
 		setTitle("Serveur");
@@ -53,7 +38,7 @@ public class Vue extends JFrame implements ActionListener {
 		contentPane.setLayout(null);
 		setContentPane(contentPane);
 		
-		adresseLabel = new JLabel("Adresse : 127.0.0.1:110");
+		adresseLabel = new JLabel("Adresse :");
 		adresseLabel.setBounds(10, 15, 200, 20);
 		contentPane.add(adresseLabel);
 		
@@ -80,26 +65,51 @@ public class Vue extends JFrame implements ActionListener {
         scrollInfoPane.setBounds(10, 150, 530, 220);
 		contentPane.add(scrollInfoPane);
 	}
+	
+	private void startServer() {
+		serveur = new Serveur(this);
+		if(serveur.getSocket() != null) {
+			String adresse = serveur.getSocket().getInetAddress().getHostAddress();
+			String port = serveur.getSocket().getLocalPort()+"";
+			btnStartStop.setText("Arreter");
+			adresseLabel.setText("Adresse : "+adresse+":"+port);
+			statusLabel.setText("Statut : En marche");
+			statusLabel.setForeground(Color.green);
+			serveur.start();
+		}
+	}
+	
+	private void stopServer() {
+		btnStartStop.setText("Lancer");
+		adresseLabel.setText("Adresse : ");
+		statusLabel.setText("Statut : Arret");
+		statusLabel.setForeground(Color.red);
+		serveur.stopServeur();
+	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource() == btnStartStop) {
 			if(serveur != null && serveur.isRunning()) {
-				btnStartStop.setText("Lancer");
-				statusLabel.setForeground(Color.red);
-				statusLabel.setText("Statut : Arret");
-				try {
-					serveur.setRunning(false);
-					serveur.getSocket().close();
-				} catch (IOException e1) {}
+				stopServer();
 			} else {
-				btnStartStop.setText("Arreter");
-				statusLabel.setForeground(Color.green);
-				statusLabel.setText("Statut : En marche");
-				serveur = new Serveur();
-				serveur.setRunning(true);
-				serveur.start();
+				startServer();
 			}
 		}
+	}
+
+	public void sop(String string) {
+		this.txtInfoArea.append(string+"\n");
+		System.out.println(string);
+	}
+	
+	public void update() {
+		this.txtClientArea.setText("");
+		for(ServeurSecondaire ss : serveur.getListeThread()) {
+			this.txtClientArea.append(
+					ss.getIdentifiantClient() + " : " + ss.getClientSocket().getInetAddress().getHostAddress() + "\n"
+			);
+		}
+		
 	}
 }
