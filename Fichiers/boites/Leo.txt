@@ -1,0 +1,5 @@
+Salut petit Nicolas !
+La structure de la lettre est classique : en-tête, la situation et son développement, puis l'objectif de la lettre (obtenir un remboursement). 
+Les liaisons "or" et "en conséquence" sont placées en tête de phrase. 
+Mail Designer 4 compose la plupart des courriers type, administratifs, commerciaux ou professionnels.
+Un développement pourrait préciser la qualité de votre offre de produits.

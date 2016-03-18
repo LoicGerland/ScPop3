@@ -90,25 +90,23 @@ public class ServeurSecondaire implements Runnable{
 	private void authentification(String requete) {
 		
 		String sortie = "";
-		String params[];
+		String[] params = requete.split(" ");
 		
-		if(requete.startsWith("APOP")) {
+		if(params[0].equals("APOP")) {
 			
-			params = requete.split(" ");
-			if(this.checkIdentifiants(params[1], params[2])) {
+			if(GestionFichiers.LireAuthentification(params[1], params[2])) {
 				this.identifiantClient = params[1];
 				this.setEtat(Etat.TRANSACTION);
-				this.listeMessages = GestionMessagesFichiers.LireMessages(identifiantClient);
+				this.listeMessages = GestionFichiers.LireMessages(identifiantClient);
 				sortie = "+OK Bonjour "+ identifiantClient;
 			}
 			else {
 				sortie = "-ERR Identifiants incorrects";
 			}
 		}
-		else if (requete.startsWith("USER")) {
+		else if (params[0].equals("USER")) {
 			
-			params = requete.split(" ");
-			if(params.length>1 && this.checkIdentifiants(params[1])) {
+			if(params.length>1 && GestionFichiers.LireAuthentification(params[1], null)) {
 				this.identifiantClient = params[1];
 				sortie = "+OK Le nom de boite est valide";
 
@@ -117,16 +115,15 @@ public class ServeurSecondaire implements Runnable{
 				sortie = "-ERR Nom de boite invalide";
 			}
 		}
-		else if (requete.startsWith("PASS")) {
+		else if (params[0].equals("PASS")) {
 			
 			if(this.identifiantClient == null){
 				sortie = "-ERR Commande USER necessaire avant";
 			}
 			else {
-				params = requete.split(" ");
-				if(this.checkIdentifiants(this.identifiantClient, params[1])) {
+				if(GestionFichiers.LireAuthentification(this.identifiantClient, params[1])) {
 					this.setEtat(Etat.TRANSACTION);
-					this.listeMessages = GestionMessagesFichiers.LireMessages(identifiantClient);
+					this.listeMessages = GestionFichiers.LireMessages(identifiantClient);
 					sortie = "+OK Bonjour "+ identifiantClient;
 				}
 				else {
@@ -134,7 +131,7 @@ public class ServeurSecondaire implements Runnable{
 				}
 			}
 		}
-		else if (requete.startsWith("QUIT")) {
+		else if (params[0].equals("QUIT")) {
 			sortie = "+OK POP3 server signing off";
 			this.running = false;
 		}
@@ -149,15 +146,13 @@ public class ServeurSecondaire implements Runnable{
 	
 	private void transaction(String requete) {
 		
-		String [] params;
+		String [] params = requete.split(" ");
 		String sortie = "+OK ";
 		
-		if(requete.startsWith("STAT")) {
+		if(params[0].equals("STAT")) {
 			sortie += this.listeMessages.size() + " " + this.listeMessages.getOctetsTotal();
 		}
-		else if(requete.startsWith("LIST")) {
-			params = requete.split(" ");
-			
+		else if(params[0].equals("LIST")) {
 			if(params.length > 1) {
 				if(this.listeMessages.size() < Integer.parseInt(params[1])) {
 					sortie = "-ERR Le message n'existe pas, seulement " + this.listeMessages.size() + " messages dans votre boite";
@@ -171,8 +166,8 @@ public class ServeurSecondaire implements Runnable{
 						+ this.listeMessages.getTousLesMessages();
 			}
 		}
-		else if(requete.startsWith("RETR")) {
-			params = requete.split(" ");
+		else if(params[0].equals("RETR")) {
+			
 			if(params.length > 1) {
 				if(this.listeMessages.size() < Integer.parseInt(params[1])) {
 					sortie = "-ERR Le message n'existe pas, seulement " + this.listeMessages.size() + " messages dans votre boite";
@@ -184,8 +179,7 @@ public class ServeurSecondaire implements Runnable{
 				sortie = "-ERR Parametre requis";
 			}
 		}
-		else if (requete.startsWith("DELE")) {
-			params = requete.split(" ");
+		else if (params[0].equals("DELE")) {
 			
 			if(params.length > 1) {
 				if(this.listeMessages.size() < Integer.parseInt(params[1])) {
@@ -204,20 +198,20 @@ public class ServeurSecondaire implements Runnable{
 				sortie = "-ERR Parametre requis";
 			}
 		}
-		else if (requete.startsWith("NOOP")) {
+		else if (params[0].equals("NOOP")) {
 			sortie += ""; 
 		}
-		else if (requete.startsWith("RSET")) {
+		else if (params[0].equals("RSET")) {
 			for (Message m : this.listeMessages) {
 				if(!m.getMarque()) {
 					m.setMarque(false);
 				}
 			}
 		}
-		else if (requete.startsWith("QUIT")) {
+		else if (params[0].equals("QUIT")) {
 			this.setEtat(Etat.MISEAJOUR);
 			this.running = false;
-			GestionMessagesFichiers.SupprimerMessages(this.identifiantClient, this.listeMessages);
+			GestionFichiers.SupprimerMessages(this.identifiantClient, this.listeMessages);
 		}
 		else {
 			sortie = "-ERR Commande inconnue";
@@ -231,22 +225,6 @@ public class ServeurSecondaire implements Runnable{
 		}
 	}
 	
-	private boolean checkIdentifiants(String identifiant, String mdp) {
-		if(identifiant.equals("test") && mdp.equals("test")) {
-			return true;
-		}
-		
-		return false;
-	}
-	
-	private boolean checkIdentifiants(String identifiant) {
-		if(identifiant.equals("test")){
-			return true;
-		}
-		
-		return false;
-	}
-
 	public Etat getEtat() {
 		return etat;
 	}

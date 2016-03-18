@@ -3,19 +3,20 @@ package pop3;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
-public class GestionMessagesFichiers {
+public class GestionFichiers {
 
 	public static ListeMessages LireMessages(String identifiant) {
 		
 		ListeMessages messages = new ListeMessages();
 		String filePath = new File("").getAbsolutePath();
-		filePath += "/Fichiers/" + identifiant + ".txt";
+		filePath += "/Fichiers/boites/" + identifiant + ".txt";
 		
 		try {
 			BufferedReader buff = new BufferedReader(new FileReader(filePath));
@@ -37,7 +38,8 @@ public class GestionMessagesFichiers {
 			} finally {
 				buff.close();
 			}
-		} catch (IOException ioe) { System.out.println("Erreur IO --" + ioe.toString()); }
+		} catch (FileNotFoundException fnfe) { System.out.println("Fichier de messages introuvable");
+		} catch (IOException e) { System.out.println("Erreur IO --" + e.toString()); }
 		
 		return messages;
 	}
@@ -45,7 +47,7 @@ public class GestionMessagesFichiers {
 	public static void SupprimerMessages(String identifiantClient, ListeMessages listeMessages) {
 		
 		String filePath = new File("").getAbsolutePath();
-		filePath += "/Fichiers/" + identifiantClient + ".txt";
+		filePath += "/Fichiers/boites/" + identifiantClient + ".txt";
 		String tempFile = new File("").getAbsolutePath();
 		tempFile += "/Fichiers/tmp.txt";
 		File f = new File(filePath);
@@ -71,6 +73,38 @@ public class GestionMessagesFichiers {
 	        
 	        Files.copy(tmp.toPath(), f.toPath(), StandardCopyOption.REPLACE_EXISTING);
         
-		} catch (IOException e) { System.out.println("Erreur IO --" + e.toString());}
+		} catch (FileNotFoundException fnfe) { System.out.println("Fichier de messages introuvable");
+		} catch (IOException e) { System.out.println("Erreur IO --" + e.toString()); }
+	}
+	
+	public static boolean LireAuthentification(String identifiant, String motDePasse) {
+		
+		String filePath = new File("").getAbsolutePath();
+		filePath += "/Fichiers/authentifications.txt";
+		
+		try {
+			BufferedReader buff = new BufferedReader(new FileReader(filePath));
+		 
+			try {
+				String line;
+				String[] parts;
+				while ((line = buff.readLine()) != null) {
+					parts = line.split(";");
+					if(motDePasse == null) {
+						if(parts[0].equals(identifiant))
+							return true;
+					} else {
+						if(parts[0].equals(identifiant)
+						&& parts[1].equals(motDePasse))
+							return true;
+					}
+				}
+			} finally {
+				buff.close();
+			}
+		} catch (FileNotFoundException fnfe) { System.out.println("Fichier d'authentification introuvable");
+		} catch (IOException e) { System.out.println("Erreur IO --" + e.toString()); }
+		
+		return false;
 	}
 }

@@ -34,7 +34,14 @@ public class ClientTest {
 				System.out.println("Serveur message: " + reponse);
 			}
             
-            output.write("APOP test test\r\n");
+			output.write("USER Leo\r\n");
+            output.flush();
+            
+            if((reponse = input.readLine()) != null){
+				System.out.println("Serveur message: " + reponse);
+			}
+            
+            output.write("APOP Nathan nahtan\r\n");
             output.flush();
             
             if((reponse = input.readLine()) != null){
@@ -82,14 +89,14 @@ public class ClientTest {
 //					}
 //				}
 //			}
-            
+            /*
             output.write("DELE 3\r\n");
             output.flush();
             
             if((reponse = input.readLine()) != null){
 				System.out.println("Serveur message: " + reponse);
 			}
-            
+            */
             output.write("QUIT\r\n");
             output.flush();
             

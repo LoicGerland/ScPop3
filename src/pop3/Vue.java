@@ -99,15 +99,15 @@ public class Vue extends JFrame implements ActionListener {
 	}
 
 	public void sop(String string) {
-		this.txtInfoArea.append(string+"\n");
+		this.txtInfoArea.insert(string+"\n", 0);
 		System.out.println(string);
 	}
 	
 	public void update() {
 		this.txtClientArea.setText("");
 		for(ServeurSecondaire ss : serveur.getListeThread()) {
-			this.txtClientArea.append(
-					ss.getIdentifiantClient() + " : " + ss.getClientSocket().getInetAddress().getHostAddress() + "\n"
+			this.txtClientArea.insert(
+					ss.getIdentifiantClient() + " : " + ss.getClientSocket().getInetAddress().getHostAddress() + "\n", 0
 			);
 		}
 		
