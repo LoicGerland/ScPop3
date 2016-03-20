@@ -5,6 +5,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 
+/**
+ * Classe représentant le serveur principal qui accepte les connexions client
+ * et qui redirige vers des serveurs secondaires au moyen de thread
+ * 
+ * @author GERLAND - LETOURNEUR
+ */
 public class Serveur extends Thread {
 
 	private Vue vue;
@@ -12,22 +18,31 @@ public class Serveur extends Thread {
 	private Boolean running;
 	private ArrayList<ServeurSecondaire> listeThread;
 
+	/**
+	 * Constructeur
+	 * @param vue
+	 */
 	public Serveur(Vue vue) {
 		
 		this.vue = vue;
 		try {
 			this.socket = new ServerSocket(Commun.PORT);
 		} catch (IOException e) {
-			this.vue.sop("Erreur : Instanciation du ServerSocket impossible");
+			this.vue.sop(Commun.ERROR_SOCKET_INSTANTIATION);
 		}
 		this.running = false;
 		this.listeThread = new ArrayList<ServeurSecondaire>();
 	}
 
+	/**
+	 * Lancement du serveur
+	 */
 	public void run() {
 
 		this.running = true;
-		this.vue.sop("Lancement du serveur " + socket.getInetAddress().getHostAddress() + " sur le port : " + socket.getLocalPort());
+		this.vue.sop("Lancement du serveur " 
+					+ socket.getInetAddress().getHostAddress() 
+					+ " sur le port : " + socket.getLocalPort());
 		
 		try {
 			while(this.running) {
@@ -45,27 +60,42 @@ public class Serveur extends Thread {
 		{
 			try { this.socket.close(); }
 			catch (IOException e) {
-				this.vue.sop("Erreur : Probleme de fermeture de socket");
+				this.vue.sop(Commun.ERROR_CLOSE_SOCKET);
 			}
 		}
 	}
 	
+	/**
+	 * Arrêt du serveur
+	 * @return Succès de l'arrêt du serveur
+	 */
 	public boolean stopServeur() {
 		try {
 			this.setRunning(false);
 			this.socket.close();
 			return true;
 		} catch (IOException e1) {
-			vue.sop("Impossible d'arreter le serveur");
+			vue.sop(Commun.ERROR_STOP_SERVER);
 			return false;
 		}
 	}
 	
-	public void stopServeurSecondaire(ServeurSecondaire sse) {
-		vue.sop("Arret du thread N°"+(listeThread.indexOf(sse)+1));
-		this.listeThread.remove(sse);
+	/**
+	 * Suppression d'un serveru secondaire de la liste 
+	 * lors de l'arrêt d'un serveur secondaire
+	 * @param serveurSecondaire
+	 */
+	public void removeServeurSecondaire(ServeurSecondaire serveurSecondaire) {
+		vue.sop("Arret du thread N°"+(listeThread.indexOf(serveurSecondaire)+1));
+		this.listeThread.remove(serveurSecondaire);
 		this.vue.update();
 	}
+	
+	/********
+	 * 
+	 * GETTER
+	 * 
+	 **************/
 	
 	public ArrayList<ServeurSecondaire> getListeThread() {
 		return listeThread;
@@ -79,6 +109,13 @@ public class Serveur extends Thread {
 	public Boolean isRunning() {
 		return running;
 	}
+	
+	/********
+	 * 
+	 * SETTER
+	 * 
+	 **************/
+	
 	public void setRunning(Boolean running) {
 		this.running = running;
 	}

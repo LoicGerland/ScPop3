@@ -10,8 +10,18 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
+/**
+ * Classe représentant la base de données des messages et des mots de passe
+ * 
+ * @author GERLAND - LETOURNEUR
+ */
 public class GestionFichiers {
 
+	/**
+	 * Lecture des messages dans la boite aux lettres associée à l'identifiant
+	 * @param identifiant
+	 * @return ListeMessages
+	 */
 	public static ListeMessages LireMessages(String identifiant) {
 		
 		ListeMessages messages = new ListeMessages();
@@ -32,7 +42,6 @@ public class GestionFichiers {
 					nouveauMessage.setCorps(line);
 					messages.add(nouveauMessage);
 
-					messages.setOctetsTotal(messages.getOctetsTotal()+line.length());
 					i++;
 				}
 			} finally {
@@ -44,6 +53,11 @@ public class GestionFichiers {
 		return messages;
 	}
 	
+	/**
+	 * Suppression des messages dans la boite aux lettres associée à l'identifiant
+	 * @param identifiant
+	 * @param listeMessages
+	 */
 	public static void SupprimerMessages(String identifiantClient, ListeMessages listeMessages) {
 		
 		String filePath = new File("").getAbsolutePath();
@@ -77,6 +91,12 @@ public class GestionFichiers {
 		} catch (IOException e) { System.out.println("Erreur IO --" + e.toString()); }
 	}
 	
+	/**
+	 * Authentification d'un utilisateur par son identifiant et son mot de passe
+	 * @param identifiant
+	 * @param motDePasse
+	 * @return boolean Succès de l'authentification
+	 */
 	public static boolean LireAuthentification(String identifiant, String motDePasse) {
 		
 		String filePath = new File("").getAbsolutePath();

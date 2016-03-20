@@ -9,6 +9,12 @@ import java.net.Socket;
 
 import pop3.Commun.Etat;
 
+/**
+ * Classe représentant le serveur serveur secondaire
+ * qui communique avec le client
+ * 
+ * @author GERLAND - LETOURNEUR
+ */
 public class ServeurSecondaire implements Runnable{
 
 	private Serveur serveurPrincipal;
@@ -21,6 +27,11 @@ public class ServeurSecondaire implements Runnable{
 	private String identifiantClient;
 	private int messageASupprimer;
 
+	/**
+	 * Constructeur
+	 * @param serveur
+	 * @param clientSocket
+	 */
 	public ServeurSecondaire(Serveur serveur, Socket clientSocket) {
 		this.serveurPrincipal = serveur;
 		this.clientSocket = clientSocket;
@@ -35,10 +46,13 @@ public class ServeurSecondaire implements Runnable{
 			this.output = new BufferedWriter( new OutputStreamWriter(clientSocket.getOutputStream()));
 			this.input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 		} catch (IOException e) {
-			this.serveurPrincipal.getVue().sop("Erreur - Initialisation des flux");
+			this.serveurPrincipal.getVue().sop(Commun.ERROR_FLUX_INSTANTIATION);
 		}
 	}
 
+	/**
+	 * Lancement du serveur secondaire
+	 */
 	public void run() {
 		this.setEtat(Etat.CONNEXION);
 		sendMessage("+OK POP3 server ready");
@@ -49,21 +63,25 @@ public class ServeurSecondaire implements Runnable{
 		String requete;
 			try {
 				if((requete = this.input.readLine()) != null){
-					this.traiterRequete(requete);
+					this.traiterCommande(requete);
 				}
 			} catch (IOException e) {
-				this.serveurPrincipal.getVue().sop("Erreur - Lecture du flux entrant");
+				this.serveurPrincipal.getVue().sop(Commun.ERROR_FLUX_READING);
 			}
 		}
 		
 		try {
 			this.clientSocket.close();
 		} catch (IOException e) {
-			this.serveurPrincipal.getVue().sop("Erreur - Fermeture du socket");
+			this.serveurPrincipal.getVue().sop(Commun.ERROR_CLOSE_SOCKET);
 		}
-		serveurPrincipal.stopServeurSecondaire(this);
+		serveurPrincipal.removeServeurSecondaire(this);
 	}
 	
+	/**
+	 * Envoi d'un message dans le flux de sortie
+	 * @param message
+	 */
 	private void sendMessage(String message) {
 		
 		try {
@@ -74,7 +92,11 @@ public class ServeurSecondaire implements Runnable{
 		}
 	}
 	
-	private void traiterRequete(String requete) {
+	/**
+	 * Traitement d'une commande lors de la réception
+	 * @param message
+	 */
+	private void traiterCommande(String requete) {
 		
 		switch(this.etat) {
 		
@@ -91,10 +113,15 @@ public class ServeurSecondaire implements Runnable{
 		}
 	}
 	
+	/**
+	 * Traitement de la commande APOP
+	 * @param params
+	 * @return String message
+	 */
 	private String commandeAPOP(String [] params) {
 		
 		if(params.length < 3)
-			return "-ERR Pas assez de parametres";
+			return Commun.ERR_MISSING_ARGS;
 		
 		if(GestionFichiers.LireAuthentification(params[1], params[2])) {
 			this.identifiantClient = params[1];
@@ -107,10 +134,15 @@ public class ServeurSecondaire implements Runnable{
 		}
 	}
 	
+	/**
+	 * Traitement de la commande USER
+	 * @param params
+	 * @return String message
+	 */
 	private String commandeUSER(String [] params) {
 		
 		if(params.length < 2)
-			return "-ERR Pas assez de parametres";
+			return Commun.ERR_MISSING_ARGS;
 		
 		if(GestionFichiers.LireAuthentification(params[1], null)) {
 			this.identifiantClient = params[1];
@@ -122,10 +154,15 @@ public class ServeurSecondaire implements Runnable{
 		}
 	}
 	
+	/**
+	 * Traitement de la commande PASS
+	 * @param params
+	 * @return String message
+	 */
 	private String commandePASS(String [] params) {
 		
 		if(params.length < 2)
-			return "-ERR Pas assez de parametres";
+			return Commun.ERR_MISSING_ARGS;
 		
 		if(this.identifiantClient == null){
 			return "-ERR Commande USER necessaire avant";
@@ -137,15 +174,20 @@ public class ServeurSecondaire implements Runnable{
 			return "+OK Bonjour "+ identifiantClient;
 		}
 		else {
-			return "-ERR Identifiants incorrects";
+			return "-ERR Mot de passe incorrect";
 		}
 	}
 	
+	/**
+	 * Traitement de la commande LIST
+	 * @param params
+	 * @return String message
+	 */
 	private String commandeLIST(String [] params) {
 		
 		if(params.length < 2) {
 			return "+OK " + this.listeMessages.size() + " messages" 
-					+ "(" + this.listeMessages.getOctetsTotal() + " octets" + ")\n" 
+					+ "(" + this.listeMessages.getTotalOctets() + " octets" + ")\n" 
 					+ this.listeMessages.getTousLesMessages();
 		}
 		
@@ -157,10 +199,15 @@ public class ServeurSecondaire implements Runnable{
 		}
 	}
 	
+	/**
+	 * Traitement de la commande RETR
+	 * @param params
+	 * @return String message
+	 */
 	private String commandeRETR(String [] params) {
 		
 		if(params.length < 2) {
-			return "-ERR Pas assez de parametres";
+			return Commun.ERR_MISSING_ARGS;
 		}
 		
 		if(this.listeMessages.size() < Integer.parseInt(params[1])) {
@@ -172,10 +219,15 @@ public class ServeurSecondaire implements Runnable{
 		}
 	}
 	
+	/**
+	 * Traitement de la commande DELE
+	 * @param params
+	 * @return String message
+	 */
 	private String commandeDELE(String [] params) {
 		
 		if(params.length < 2) {
-			return "-ERR Pas assez de parametres";
+			return Commun.ERR_MISSING_ARGS;
 		}
 
 		if(this.listeMessages.size() < Integer.parseInt(params[1])) {
@@ -183,15 +235,19 @@ public class ServeurSecondaire implements Runnable{
 		} else {
 			Message message = this.listeMessages.get(Integer.parseInt(params[1])-1);
 			if (message.getMarque()) {
-				return "-ERR message " + params[1] + " deja supprimé";
+				return "-ERR Message " + params[1] + " deja supprimé";
 			} else {
 				message.setMarque(true);
 				this.messageASupprimer++;
-				return "+OK message " + params[1] + " supprimé";
+				return "+OK Message " + params[1] + " supprimé";
 			}
 		}
 	}
 	
+	/**
+	 * Traitement de la commande RSET
+	 * @return String message
+	 */
 	private String commandeRSET() {
 		for (Message m : this.listeMessages) {
 			m.setMarque(false);
@@ -200,6 +256,11 @@ public class ServeurSecondaire implements Runnable{
 		return "+OK";
 	}
 	
+	/**
+	 * Traitement de la commande QUIT
+	 * @param delete Permet de savoir si l'état MISE-A-JOUR doit être parcouru
+	 * @return String message
+	 */
 	private String commandeQUIT(boolean delete) {
 		
 		this.running = false;
@@ -211,12 +272,16 @@ public class ServeurSecondaire implements Runnable{
 			this.listeMessages = GestionFichiers.LireMessages(identifiantClient);
 			int afterDelete = this.listeMessages.size();
 			if(afterDelete != beforeDelete - this.messageASupprimer)
-				return "-ERR certains messages marqués comme effacés non effacés";
+				return "-ERR Certains messages marqués comme effacés non effacés";
 		}
 		
-		return "+OK POP3 server signing off";
+		return "+OK Déconnexion du serveur POP3";
 	}
 
+	/**
+	 * Traitement de la commande lorsque le serveur est dans l'état AUTHORISATION
+	 * @param requete
+	 */
 	private void authorisation(String requete) {
 		
 		String sortie = "";
@@ -245,15 +310,20 @@ public class ServeurSecondaire implements Runnable{
 			case "DELE" :
 			case "NOOP" :
 			case "RSET" :
-				sortie = "Commande impossible dans cet état";
+				sortie = Commun.ERR_IMPOSSIBLE_COMMAND;
+				break;
 				
 			default :
-				sortie = "-ERR Commande inconnue";
+				sortie = Commun.ERR_UNKNOWN_COMMAND;
 		}
 		
 		this.sendMessage(sortie);
 	}
 	
+	/**
+	 * Traitement de la commande lorsque le serveur est dans l'état TRANSACTION
+	 * @param requete
+	 */
 	private void transaction(String requete) {
 		
 		String [] params = requete.split(" ");
@@ -262,7 +332,7 @@ public class ServeurSecondaire implements Runnable{
 		switch(params[0]) {
 		
 			case "STAT" :
-				sortie = "+OK " + this.listeMessages.size() + " " + this.listeMessages.getOctetsTotal();
+				sortie = "+OK " + this.listeMessages.size() + " " + this.listeMessages.getTotalOctets();
 				break;
 				
 			case "LIST" :
@@ -290,31 +360,43 @@ public class ServeurSecondaire implements Runnable{
 			case "APOP" :
 			case "USER" :
 			case "PASS" :
-				sortie = "Commande impossible dans cet état";
+				sortie = Commun.ERR_IMPOSSIBLE_COMMAND;
 				break;
 			
 			default :
-				sortie = "-ERR Commande inconnue";
+				sortie = Commun.ERR_UNKNOWN_COMMAND;
 		}
 		
 		this.sendMessage(sortie);
 	}
 	
+	/********
+	 * 
+	 * GETTER
+	 * 
+	 **************/
+	
 	public Etat getEtat() {
 		return etat;
 	}
 
-	public void setEtat(Etat etat) {
-		this.etat = etat;
-		System.out.println("Etat du serveur : " + this.etat);
-	}
-	
 	public String getIdentifiantClient() {
 		return identifiantClient;
 	}
 
 	public Socket getClientSocket() {
 		return clientSocket;
+	}
+	
+	/********
+	 * 
+	 * SETTER
+	 * 
+	 **************/
+	
+	public void setEtat(Etat etat) {
+		this.etat = etat;
+		System.out.println("Etat du serveur : " + this.etat);
 	}
 }
 

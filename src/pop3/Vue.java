@@ -13,6 +13,11 @@ import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.JButton;
  
+/**
+ * Classe représentant la vue du serveur principal 
+ * 
+ * @author GERLAND - LETOURNEUR
+ */
 public class Vue extends JFrame implements ActionListener {
 	private static final long serialVersionUID = -1374851023131011832L;
 	

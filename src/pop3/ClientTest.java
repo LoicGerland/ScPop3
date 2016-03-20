@@ -41,6 +41,14 @@ public class ClientTest {
 				System.out.println("Serveur message: " + reponse);
 			}
             
+
+            output.write("STAT\r\n");
+            output.flush();
+            
+            if((reponse = input.readLine()) != null){
+				System.out.println("Serveur message: " + reponse);
+			}
+            
             output.write("APOP Nathan nahtan\r\n");
             output.flush();
             
@@ -64,6 +72,13 @@ public class ClientTest {
 					reponse = input.readLine();
 					System.out.println("Serveur message: " + reponse);
 				}
+			}
+            
+            output.write("USER Leo\r\n");
+            output.flush();
+            
+            if((reponse = input.readLine()) != null){
+				System.out.println("Serveur message: " + reponse);
 			}
             
             output.write("RETR 3\r\n");
