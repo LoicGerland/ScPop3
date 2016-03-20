@@ -32,18 +32,20 @@ public class Serveur extends Thread {
 		try {
 			while(this.running) {
 				Socket client = this.socket.accept();
-				ServeurSecondaire thread = new ServeurSecondaire(vue, client);
+				this.vue.sop("Nouveau client ! Adresse : " + client.getInetAddress());
+				this.vue.sop("Demarrage du thread N°"+(listeThread.size()+1));
+				ServeurSecondaire thread = new ServeurSecondaire(this, client);
 				this.listeThread.add(thread);
 				this.vue.update();
 				new Thread(thread).start();
 			}
-		} catch (IOException e) {			this.vue.sop("Arret du serveur");;
+		} catch (IOException e) {			this.vue.sop("Arret du serveur");
 		}
 		finally
 		{
 			try { this.socket.close(); }
 			catch (IOException e) {
-				this.vue.sop("Erreur : Probleme de deconnexion de socket");
+				this.vue.sop("Erreur : Probleme de fermeture de socket");
 			}
 		}
 	}
@@ -59,14 +61,20 @@ public class Serveur extends Thread {
 		}
 	}
 	
+	public void stopServeurSecondaire(ServeurSecondaire sse) {
+		vue.sop("Arret du thread N°"+(listeThread.indexOf(sse)+1));
+		this.listeThread.remove(sse);
+		this.vue.update();
+	}
+	
 	public ArrayList<ServeurSecondaire> getListeThread() {
 		return listeThread;
 	}
 	public ServerSocket getSocket() {
 		return socket;
 	}
-	public void setSocket(ServerSocket socket) {
-		this.socket = socket;
+	public Vue getVue() {
+		return vue;
 	}
 	public Boolean isRunning() {
 		return running;

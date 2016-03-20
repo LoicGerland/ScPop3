@@ -11,7 +11,7 @@ import pop3.Commun.Etat;
 
 public class ServeurSecondaire implements Runnable{
 
-	private Vue vue;
+	private Serveur serveurPrincipal;
 	private final Socket clientSocket;
 	private BufferedReader input;
 	private BufferedWriter output;
@@ -19,43 +19,58 @@ public class ServeurSecondaire implements Runnable{
 	private Boolean running;
 	private ListeMessages listeMessages;
 	private String identifiantClient;
+	private int messageASupprimer;
 
-	public ServeurSecondaire(Vue vue, Socket clientSocket) {
-		this.vue = vue;
+	public ServeurSecondaire(Serveur serveur, Socket clientSocket) {
+		this.serveurPrincipal = serveur;
 		this.clientSocket = clientSocket;
 		
 		this.running = true;
 		this.setEtat(Etat.INITIALISATION);
 		this.listeMessages = new ListeMessages();
 		this.identifiantClient = "Inconnu";
-	}
-
-	public void run() {
+		this.messageASupprimer = 0;
 		
 		try {
 			this.output = new BufferedWriter( new OutputStreamWriter(clientSocket.getOutputStream()));
 			this.input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			this.setEtat(Etat.CONNEXION);
-			this.vue.sop("Nouveau client ! Adresse : " + clientSocket.getInetAddress() + " Port : " + clientSocket.getPort());
-			
-			this.output.write("+OK POP3 server ready\r\n");
-			this.output.flush();
-			this.setEtat(Etat.AUTHORISATION);
+		} catch (IOException e) {
+			this.serveurPrincipal.getVue().sop("Erreur - Initialisation des flux");
+		}
+	}
+
+	public void run() {
+		this.setEtat(Etat.CONNEXION);
+		sendMessage("+OK POP3 server ready");
 		
-			while(this.running) {
-				String requete;
+		this.setEtat(Etat.AUTHORISATION);
+		
+		while(this.running) {
+		String requete;
+			try {
 				if((requete = this.input.readLine()) != null){
 					this.traiterRequete(requete);
 				}
+			} catch (IOException e) {
+				this.serveurPrincipal.getVue().sop("Erreur - Lecture du flux entrant");
 			}
-		} 
-		catch (IOException e) { this.vue.sop("Erreur : Probleme de socket"); }
-		finally
-		{
-			try { this.clientSocket.close(); }
-			catch (IOException e) {
-				this.vue.sop("Erreur : Probleme de deconnexion de socket");
-			}
+		}
+		
+		try {
+			this.clientSocket.close();
+		} catch (IOException e) {
+			this.serveurPrincipal.getVue().sop("Erreur - Fermeture du socket");
+		}
+		serveurPrincipal.stopServeurSecondaire(this);
+	}
+	
+	private void sendMessage(String message) {
+		
+		try {
+			this.output.write(message+"\r\n");
+			this.output.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 	
@@ -64,7 +79,7 @@ public class ServeurSecondaire implements Runnable{
 		switch(this.etat) {
 		
 			case AUTHORISATION:
-				this.authentification(requete);
+				this.authorisation(requete);
 				break;
 				
 			case TRANSACTION:
@@ -72,157 +87,217 @@ public class ServeurSecondaire implements Runnable{
 				break;
 				
 			default: 
-				this.error();
-			
+				this.sendMessage("-ERR");
 		}
 	}
 	
-	private void error() {
+	private String commandeAPOP(String [] params) {
 		
-		try {
-			this.output.write("-ERR\r\n");
-			this.output.flush();
-		} catch (IOException e) {
-			e.printStackTrace();
+		if(params.length < 3)
+			return "-ERR Pas assez de parametres";
+		
+		if(GestionFichiers.LireAuthentification(params[1], params[2])) {
+			this.identifiantClient = params[1];
+			this.listeMessages = GestionFichiers.LireMessages(identifiantClient);
+			this.setEtat(Etat.TRANSACTION);
+			return "+OK Bonjour "+ identifiantClient;
+		}
+		else {
+			return "-ERR Identifiants incorrects";
 		}
 	}
 	
-	private void authentification(String requete) {
+	private String commandeUSER(String [] params) {
+		
+		if(params.length < 2)
+			return "-ERR Pas assez de parametres";
+		
+		if(GestionFichiers.LireAuthentification(params[1], null)) {
+			this.identifiantClient = params[1];
+			return "+OK Le nom de boite est valide";
+
+		}
+		else {
+			return "-ERR Nom de boite invalide";
+		}
+	}
+	
+	private String commandePASS(String [] params) {
+		
+		if(params.length < 2)
+			return "-ERR Pas assez de parametres";
+		
+		if(this.identifiantClient == null){
+			return "-ERR Commande USER necessaire avant";
+		}
+
+		if(GestionFichiers.LireAuthentification(this.identifiantClient, params[1])) {
+			this.setEtat(Etat.TRANSACTION);
+			this.listeMessages = GestionFichiers.LireMessages(identifiantClient);
+			return "+OK Bonjour "+ identifiantClient;
+		}
+		else {
+			return "-ERR Identifiants incorrects";
+		}
+	}
+	
+	private String commandeLIST(String [] params) {
+		
+		if(params.length < 2) {
+			return "+OK " + this.listeMessages.size() + " messages" 
+					+ "(" + this.listeMessages.getOctetsTotal() + " octets" + ")\n" 
+					+ this.listeMessages.getTousLesMessages();
+		}
+		
+		if(this.listeMessages.size() < Integer.parseInt(params[1])) {
+			return "-ERR Le message n'existe pas, seulement " + this.listeMessages.size() + " messages dans votre boite";
+		} else {
+			Message message = this.listeMessages.get(Integer.parseInt(params[1])-1);
+			return "+OK " + message.getNumero() + " " + message.getTailleOctets();
+		}
+	}
+	
+	private String commandeRETR(String [] params) {
+		
+		if(params.length < 2) {
+			return "-ERR Pas assez de parametres";
+		}
+		
+		if(this.listeMessages.size() < Integer.parseInt(params[1])) {
+			return "-ERR Le message n'existe pas, seulement " + this.listeMessages.size() + " messages dans votre boite";
+		} else {
+			Message message = this.listeMessages.get(Integer.parseInt(params[1])-1);
+			this.messageASupprimer = 0;
+			return "+OK " + message.getTailleOctets() + " octets\n" + message.getCorps() + "\n.";
+		}
+	}
+	
+	private String commandeDELE(String [] params) {
+		
+		if(params.length < 2) {
+			return "-ERR Pas assez de parametres";
+		}
+
+		if(this.listeMessages.size() < Integer.parseInt(params[1])) {
+			return "-ERR Le message n'existe pas, seulement " + this.listeMessages.size() + " messages dans votre boite";
+		} else {
+			Message message = this.listeMessages.get(Integer.parseInt(params[1])-1);
+			if (message.getMarque()) {
+				return "-ERR message " + params[1] + " deja supprimé";
+			} else {
+				message.setMarque(true);
+				this.messageASupprimer++;
+				return "+OK message " + params[1] + " supprimé";
+			}
+		}
+	}
+	
+	private String commandeRSET() {
+		for (Message m : this.listeMessages) {
+			m.setMarque(false);
+		}
+		
+		return "+OK";
+	}
+	
+	private String commandeQUIT(boolean delete) {
+		
+		this.running = false;
+		
+		if(delete) {
+			this.setEtat(Etat.MISEAJOUR);
+			int beforeDelete = this.listeMessages.size();
+			GestionFichiers.SupprimerMessages(this.identifiantClient, this.listeMessages);
+			this.listeMessages = GestionFichiers.LireMessages(identifiantClient);
+			int afterDelete = this.listeMessages.size();
+			if(afterDelete != beforeDelete - this.messageASupprimer)
+				return "-ERR certains messages marqués comme effacés non effacés";
+		}
+		
+		return "+OK POP3 server signing off";
+	}
+
+	private void authorisation(String requete) {
 		
 		String sortie = "";
 		String[] params = requete.split(" ");
 		
-		if(params[0].equals("APOP")) {
+		switch(params[0]) {
 			
-			if(GestionFichiers.LireAuthentification(params[1], params[2])) {
-				this.identifiantClient = params[1];
-				this.setEtat(Etat.TRANSACTION);
-				this.listeMessages = GestionFichiers.LireMessages(identifiantClient);
-				sortie = "+OK Bonjour "+ identifiantClient;
-			}
-			else {
-				sortie = "-ERR Identifiants incorrects";
-			}
-		}
-		else if (params[0].equals("USER")) {
+			case "APOP" :
+				sortie = commandeAPOP(params);
+				break;
 			
-			if(params.length>1 && GestionFichiers.LireAuthentification(params[1], null)) {
-				this.identifiantClient = params[1];
-				sortie = "+OK Le nom de boite est valide";
-
-			}
-			else {
-				sortie = "-ERR Nom de boite invalide";
-			}
-		}
-		else if (params[0].equals("PASS")) {
-			
-			if(this.identifiantClient == null){
-				sortie = "-ERR Commande USER necessaire avant";
-			}
-			else {
-				if(GestionFichiers.LireAuthentification(this.identifiantClient, params[1])) {
-					this.setEtat(Etat.TRANSACTION);
-					this.listeMessages = GestionFichiers.LireMessages(identifiantClient);
-					sortie = "+OK Bonjour "+ identifiantClient;
-				}
-				else {
-					sortie = "-ERR Identifiants incorrects";
-				}
-			}
-		}
-		else if (params[0].equals("QUIT")) {
-			sortie = "+OK POP3 server signing off";
-			this.running = false;
+			case "USER" :
+				sortie = commandeUSER(params);
+				break;
+				
+			case "PASS" :
+				sortie = commandePASS(params);
+				break;
+				
+			case "QUIT" :
+				sortie = commandeQUIT(false);
+				break;
+				
+			case "STAT" :
+			case "LIST" :
+			case "DELE" :
+			case "NOOP" :
+			case "RSET" :
+				sortie = "Commande impossible dans cet état";
+				
+			default :
+				sortie = "-ERR Commande inconnue";
 		}
 		
-		try {
-			this.output.write(sortie+"\r\n");
-			this.output.flush();
-		} catch (IOException e) {
-			this.vue.sop("Erreur : Probleme de socket");
-		}
+		this.sendMessage(sortie);
 	}
 	
 	private void transaction(String requete) {
 		
 		String [] params = requete.split(" ");
-		String sortie = "+OK ";
+		String sortie = "";
 		
-		if(params[0].equals("STAT")) {
-			sortie += this.listeMessages.size() + " " + this.listeMessages.getOctetsTotal();
-		}
-		else if(params[0].equals("LIST")) {
-			if(params.length > 1) {
-				if(this.listeMessages.size() < Integer.parseInt(params[1])) {
-					sortie = "-ERR Le message n'existe pas, seulement " + this.listeMessages.size() + " messages dans votre boite";
-				} else {
-					Message message = this.listeMessages.get(Integer.parseInt(params[1])-1);
-					sortie += message.getNumero() + " " + message.getTailleOctets();
-				}
-			} else {
-				sortie += this.listeMessages.size() + " messages" 
-						+ "(" + this.listeMessages.getOctetsTotal() + " octets" + ")\n" 
-						+ this.listeMessages.getTousLesMessages();
-			}
-		}
-		else if(params[0].equals("RETR")) {
+		switch(params[0]) {
+		
+			case "STAT" :
+				sortie = "+OK " + this.listeMessages.size() + " " + this.listeMessages.getOctetsTotal();
+				break;
+				
+			case "LIST" :
+				sortie = commandeLIST(params);
+				break;
+				
+			case "RETR" :
+				sortie = commandeRETR(params);
+				break;
+				
+			case "DELE" :
+				sortie = commandeDELE(params);
+				break;
+				
+			case "NOOP" :
+				sortie = "+OK";
+				
+			case "RSET" :
+				sortie = commandeRSET();
+				
+			case "QUIT" :
+				sortie = commandeQUIT(true);
+				break;
+				
+			case "APOP" :
+			case "USER" :
+			case "PASS" :
+				sortie = "Commande impossible dans cet état";
+				break;
 			
-			if(params.length > 1) {
-				if(this.listeMessages.size() < Integer.parseInt(params[1])) {
-					sortie = "-ERR Le message n'existe pas, seulement " + this.listeMessages.size() + " messages dans votre boite";
-				} else {
-					Message message = this.listeMessages.get(Integer.parseInt(params[1])-1);
-					sortie += message.getTailleOctets() + " octets\n" + message.getCorps() + "\n.";
-				}
-			} else {
-				sortie = "-ERR Parametre requis";
-			}
-		}
-		else if (params[0].equals("DELE")) {
-			
-			if(params.length > 1) {
-				if(this.listeMessages.size() < Integer.parseInt(params[1])) {
-					sortie = "-ERR Le message n'existe pas, seulement " + this.listeMessages.size() + " messages dans votre boite";
-				} else {
-					Message message = this.listeMessages.get(Integer.parseInt(params[1])-1);
-					if (message.getMarque()) {
-						sortie = "-ERR message " + params[1] + " deja supprimé";
-					} else {
-						message.setMarque(true);
-						sortie += "message " + params[1] + " supprimé";
-					}
-				}
-			}
-			else {
-				sortie = "-ERR Parametre requis";
-			}
-		}
-		else if (params[0].equals("NOOP")) {
-			sortie += ""; 
-		}
-		else if (params[0].equals("RSET")) {
-			for (Message m : this.listeMessages) {
-				if(!m.getMarque()) {
-					m.setMarque(false);
-				}
-			}
-		}
-		else if (params[0].equals("QUIT")) {
-			this.setEtat(Etat.MISEAJOUR);
-			this.running = false;
-			GestionFichiers.SupprimerMessages(this.identifiantClient, this.listeMessages);
-		}
-		else {
-			sortie = "-ERR Commande inconnue";
+			default :
+				sortie = "-ERR Commande inconnue";
 		}
 		
-		try {
-			this.output.write(sortie+"\r\n");
-			this.output.flush();
-		} catch (IOException e) {
-			this.vue.sop("Erreur : Probleme de socket");
-		}
+		this.sendMessage(sortie);
 	}
 	
 	public Etat getEtat() {
