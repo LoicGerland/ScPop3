@@ -34,21 +34,6 @@ public class ClientTest {
 				System.out.println("Serveur message: " + reponse);
 			}
             
-			output.write("USER Leo\r\n");
-            output.flush();
-            
-            if((reponse = input.readLine()) != null){
-				System.out.println("Serveur message: " + reponse);
-			}
-            
-
-            output.write("STAT\r\n");
-            output.flush();
-            
-            if((reponse = input.readLine()) != null){
-				System.out.println("Serveur message: " + reponse);
-			}
-            
             output.write("APOP Nathan nahtan\r\n");
             output.flush();
             
@@ -74,14 +59,7 @@ public class ClientTest {
 				}
 			}
             
-            output.write("USER Leo\r\n");
-            output.flush();
-            
-            if((reponse = input.readLine()) != null){
-				System.out.println("Serveur message: " + reponse);
-			}
-            
-            output.write("RETR 3\r\n");
+            output.write("RETR 1\r\n");
             output.flush();
             if((reponse = input.readLine()) != null){
 				System.out.println("Serveur message: " + reponse);
@@ -93,25 +71,14 @@ public class ClientTest {
 				}
 			}
             
-//            output.write("RETR 4\r\n");
-//            output.flush();
-//            if((reponse = input.readLine()) != null){
-//				System.out.println("Serveur message: " + reponse);
-//				if(reponse.startsWith("+OK")) {
-//					for(int i=0;i<2;i++) {
-//						reponse = input.readLine();
-//						System.out.println("Serveur message: " + reponse);
-//					}
-//				}
-//			}
-            /*
-            output.write("DELE 3\r\n");
+            
+            output.write("DELE 1\r\n");
             output.flush();
             
             if((reponse = input.readLine()) != null){
 				System.out.println("Serveur message: " + reponse);
 			}
-            */
+            
             output.write("QUIT\r\n");
             output.flush();
             

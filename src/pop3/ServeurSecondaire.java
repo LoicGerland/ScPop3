@@ -55,7 +55,7 @@ public class ServeurSecondaire implements Runnable{
 	 */
 	public void run() {
 		this.setEtat(Etat.CONNEXION);
-		sendMessage("+OK POP3 server ready");
+		sendMessage(Commun.OK_SERVER_READY);
 		
 		this.setEtat(Etat.AUTHORISATION);
 		
@@ -66,6 +66,7 @@ public class ServeurSecondaire implements Runnable{
 					this.traiterCommande(requete);
 				}
 			} catch (IOException e) {
+				this.running = false;
 				this.serveurPrincipal.getVue().sop(Commun.ERROR_FLUX_READING);
 			}
 		}
@@ -98,6 +99,7 @@ public class ServeurSecondaire implements Runnable{
 	 */
 	private void traiterCommande(String requete) {
 		
+		this.serveurPrincipal.getVue().sop("Thread N°"+serveurPrincipal.getListeThread().indexOf(this)+" répond à : "+ requete);
 		switch(this.etat) {
 		
 			case AUTHORISATION:
@@ -127,10 +129,11 @@ public class ServeurSecondaire implements Runnable{
 			this.identifiantClient = params[1];
 			this.listeMessages = GestionFichiers.LireMessages(identifiantClient);
 			this.setEtat(Etat.TRANSACTION);
-			return "+OK Bonjour "+ identifiantClient;
+			this.serveurPrincipal.getVue().update();
+			return Commun.OK_HELLO + identifiantClient;
 		}
 		else {
-			return "-ERR Identifiants incorrects";
+			return Commun.ERR_WRONG_LOGIN;
 		}
 	}
 	
@@ -146,35 +149,39 @@ public class ServeurSecondaire implements Runnable{
 		
 		if(GestionFichiers.LireAuthentification(params[1], null)) {
 			this.identifiantClient = params[1];
-			return "+OK Le nom de boite est valide";
+			return Commun.OK_BOX_NAME;
 
 		}
 		else {
-			return "-ERR Nom de boite invalide";
+			return Commun.ERR_WRONG_BOX_NAME;
 		}
 	}
 	
 	/**
 	 * Traitement de la commande PASS
+	 * 
 	 * @param params
 	 * @return String message
 	 */
-	private String commandePASS(String [] params) {
+	private String commandePASS(String requete) {
+		
+		String [] params = requete.split(" ", 2 );
 		
 		if(params.length < 2)
 			return Commun.ERR_MISSING_ARGS;
 		
 		if(this.identifiantClient == null){
-			return "-ERR Commande USER necessaire avant";
+			return Commun.ERR_USER_NEEDED;
 		}
 
 		if(GestionFichiers.LireAuthentification(this.identifiantClient, params[1])) {
 			this.setEtat(Etat.TRANSACTION);
 			this.listeMessages = GestionFichiers.LireMessages(identifiantClient);
-			return "+OK Bonjour "+ identifiantClient;
+			this.serveurPrincipal.getVue().update();
+			return Commun.OK_HELLO + identifiantClient;
 		}
 		else {
-			return "-ERR Mot de passe incorrect";
+			return Commun.ERR_WRONG_LOGIN;
 		}
 	}
 	
@@ -192,7 +199,7 @@ public class ServeurSecondaire implements Runnable{
 		}
 		
 		if(this.listeMessages.size() < Integer.parseInt(params[1])) {
-			return "-ERR Le message n'existe pas, seulement " + this.listeMessages.size() + " messages dans votre boite";
+			return Commun.ERR_MESSAGE_NOT_EXISTS.replaceFirst("_NUMMSG_", this.listeMessages.size()+"");
 		} else {
 			Message message = this.listeMessages.get(Integer.parseInt(params[1])-1);
 			return "+OK " + message.getNumero() + " " + message.getTailleOctets();
@@ -210,12 +217,14 @@ public class ServeurSecondaire implements Runnable{
 			return Commun.ERR_MISSING_ARGS;
 		}
 		
-		if(this.listeMessages.size() < Integer.parseInt(params[1])) {
-			return "-ERR Le message n'existe pas, seulement " + this.listeMessages.size() + " messages dans votre boite";
+		if(this.listeMessages.size() < Integer.parseInt(params[1]) && Integer.parseInt(params[1]) > 0) {
+			return Commun.ERR_MESSAGE_NOT_EXISTS.replaceFirst("_NUMMSG_", this.listeMessages.size()+"");
 		} else {
 			Message message = this.listeMessages.get(Integer.parseInt(params[1])-1);
-			this.messageASupprimer = 0;
-			return "+OK " + message.getTailleOctets() + " octets\n" + message.getCorps() + "\n.";
+			if (message.getMarque()) {
+				return "-ERR Message " + params[1] + " déjà supprimé";
+			}
+			return "+OK " + message.getTailleOctets() + " octets\n" + message.getCorps() + "\n";
 		}
 	}
 	
@@ -230,12 +239,12 @@ public class ServeurSecondaire implements Runnable{
 			return Commun.ERR_MISSING_ARGS;
 		}
 
-		if(this.listeMessages.size() < Integer.parseInt(params[1])) {
-			return "-ERR Le message n'existe pas, seulement " + this.listeMessages.size() + " messages dans votre boite";
+		if(this.listeMessages.size() < Integer.parseInt(params[1]) && Integer.parseInt(params[1]) > 0) {
+			return Commun.ERR_MESSAGE_NOT_EXISTS.replaceFirst("_NUMMSG_", this.listeMessages.size()+"");
 		} else {
 			Message message = this.listeMessages.get(Integer.parseInt(params[1])-1);
 			if (message.getMarque()) {
-				return "-ERR Message " + params[1] + " deja supprimé";
+				return "-ERR Message " + params[1] + " déjà supprimé";
 			} else {
 				message.setMarque(true);
 				this.messageASupprimer++;
@@ -249,6 +258,8 @@ public class ServeurSecondaire implements Runnable{
 	 * @return String message
 	 */
 	private String commandeRSET() {
+		this.messageASupprimer = 0;
+		
 		for (Message m : this.listeMessages) {
 			m.setMarque(false);
 		}
@@ -268,14 +279,15 @@ public class ServeurSecondaire implements Runnable{
 		if(delete) {
 			this.setEtat(Etat.MISEAJOUR);
 			int beforeDelete = this.listeMessages.size();
-			GestionFichiers.SupprimerMessages(this.identifiantClient, this.listeMessages);
+			if(this.messageASupprimer > 0)
+				GestionFichiers.SupprimerMessages(this.identifiantClient, this.listeMessages);
 			this.listeMessages = GestionFichiers.LireMessages(identifiantClient);
 			int afterDelete = this.listeMessages.size();
 			if(afterDelete != beforeDelete - this.messageASupprimer)
-				return "-ERR Certains messages marqués comme effacés non effacés";
+				return Commun.ERR_MARKED_MESSAGE;
 		}
 		
-		return "+OK Déconnexion du serveur POP3";
+		return Commun.OK_SERVER_LOGOUT;
 	}
 
 	/**
@@ -298,7 +310,7 @@ public class ServeurSecondaire implements Runnable{
 				break;
 				
 			case "PASS" :
-				sortie = commandePASS(params);
+				sortie = commandePASS(requete);
 				break;
 				
 			case "QUIT" :
@@ -349,9 +361,11 @@ public class ServeurSecondaire implements Runnable{
 				
 			case "NOOP" :
 				sortie = "+OK";
+				break;
 				
 			case "RSET" :
 				sortie = commandeRSET();
+				break;
 				
 			case "QUIT" :
 				sortie = commandeQUIT(true);

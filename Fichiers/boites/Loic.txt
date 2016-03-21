@@ -1,0 +1,24 @@
+orig-date:18/03/2016
+from:Leo
+to:Nathan
+subject:Votre commande 54365
+La confirmation de commande est énoncée dès le début de la lettre.
+.
+orig-date:19/03/2016
+from:Loic
+to:Nathan
+subject:CR 18/03
+Votre interlocuteur se voit gratifié d'un acompte et d'un remerciement.
+.
+orig-date:21/03/2016
+from:Leo
+to:Nathan
+subject:Votre commande 54365 est partie
+Simple et efficace. Votre commande va vous parvenir...
+.
+orig-date:21/03/2016
+from:Hakan
+to:Nathan
+subject:Erreur de partage
+Cette lettre ne requiert pas de formulation sophistiquée.
+.

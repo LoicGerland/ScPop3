@@ -1,5 +1,24 @@
-Salut petit Nicolas !
-La structure de la lettre est classique : en-tête, la situation et son développement, puis l'objectif de la lettre (obtenir un remboursement). 
-Les liaisons "or" et "en conséquence" sont placées en tête de phrase. 
-Mail Designer 4 compose la plupart des courriers type, administratifs, commerciaux ou professionnels.
-Un développement pourrait préciser la qualité de votre offre de produits.
+orig-date:18/03/2016
+from:Leo
+to:Nathan
+subject:Votre commande 54365
+La confirmation de commande est énoncée dès le début de la lettre.
+.
+orig-date:19/03/2016
+from:Loic
+to:Nathan
+subject:CR 18/03
+Votre interlocuteur se voit gratifié d'un acompte et d'un remerciement.
+.
+orig-date:21/03/2016
+from:Leo
+to:Nathan
+subject:Votre commande 54365 est partie
+Simple et efficace. Votre commande va vous parvenir...
+.
+orig-date:21/03/2016
+from:Hakan
+to:Nathan
+subject:Erreur de partage
+Cette lettre ne requiert pas de formulation sophistiquée.
+.
