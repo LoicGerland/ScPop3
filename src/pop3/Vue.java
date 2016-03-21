@@ -90,6 +90,7 @@ public class Vue extends JFrame implements ActionListener {
 		statusLabel.setText("Statut : Arret");
 		statusLabel.setForeground(Color.red);
 		serveur.stopServeur();
+		this.update();
 	}
 
 	@Override

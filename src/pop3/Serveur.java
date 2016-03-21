@@ -71,6 +71,7 @@ public class Serveur extends Thread {
 	 */
 	public boolean stopServeur() {
 		try {
+			this.listeThread.clear();
 			this.setRunning(false);
 			this.socket.close();
 			return true;
