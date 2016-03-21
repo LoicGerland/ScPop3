@@ -8,6 +8,7 @@ import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Scanner;
 
 public class ClientTest {
 
@@ -34,58 +35,33 @@ public class ClientTest {
 				System.out.println("Serveur message: " + reponse);
 			}
             
-            output.write("APOP Nathan nahtan\r\n");
-            output.flush();
-            
-            if((reponse = input.readLine()) != null){
-				System.out.println("Serveur message: " + reponse);
-			}
-            
-            output.write("STAT\r\n");
-            output.flush();
-            
-            if((reponse = input.readLine()) != null){
-				System.out.println("Serveur message: " + reponse);
-			}
-            
-            output.write("LIST\r\n");
-            output.flush();
-            if((reponse = input.readLine()) != null){
-				System.out.println("Serveur message: " + reponse);
-				int nbMessages = Integer.parseInt(reponse.split(" ")[1]);
-				for(int i=0;i<=nbMessages;i++) {
-					reponse = input.readLine();
-					System.out.println("Serveur message: " + reponse);
-				}
-			}
-            
-            output.write("RETR 1\r\n");
-            output.flush();
-            if((reponse = input.readLine()) != null){
-				System.out.println("Serveur message: " + reponse);
-				if(reponse.startsWith("+OK")) {
-					while(!reponse.equals(".")) {
-						reponse = input.readLine();
+			
+			Scanner sc = new Scanner(System.in);
+			
+			while(reponse != Commun.OK_SERVER_LOGOUT) {
+				System.out.println("Commande :");
+				String str = sc.nextLine();
+				
+	            output.write(str+"\r\n");
+	            output.flush();
+	            
+	            if((str.startsWith("LIST") && !str.startsWith("LIST ")) || str.startsWith("RETR")) {
+	            	if((reponse = input.readLine()) != null){
+	    				System.out.println("Serveur message: " + reponse);
+	    				if(reponse.startsWith("+OK")) {
+	    					while(!reponse.equals(".")) {
+	    						reponse = input.readLine();
+	    						System.out.println("Serveur message: " + reponse);
+	    					}
+	    				}
+	    			}
+	            } else {
+		            if((reponse = input.readLine()) != null){
 						System.out.println("Serveur message: " + reponse);
 					}
-				}
-			}
-            
-            
-            output.write("DELE 1\r\n");
-            output.flush();
-            
-            if((reponse = input.readLine()) != null){
-				System.out.println("Serveur message: " + reponse);
-			}
-            
-            output.write("QUIT\r\n");
-            output.flush();
-            
-            if((reponse = input.readLine()) != null){
-				System.out.println("Serveur message: " + reponse);
-			}
-                        
+	            }
+			}      
+			sc.close();
         }
         catch (UnknownHostException e)
         {

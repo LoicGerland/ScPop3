@@ -89,7 +89,7 @@ public class ServeurSecondaire implements Runnable{
 			this.output.write(message+"\r\n");
 			this.output.flush();
 		} catch (IOException e) {
-			e.printStackTrace();
+			this.serveurPrincipal.getVue().sop(Commun.ERROR_SEND_MESSAGE);
 		}
 	}
 	
@@ -100,19 +100,25 @@ public class ServeurSecondaire implements Runnable{
 	private void traiterCommande(String requete) {
 		
 		this.serveurPrincipal.getVue().sop("Thread N°"+serveurPrincipal.getListeThread().indexOf(this)+" répond à : "+ requete);
+		
+		String sortie = "";
+		
 		switch(this.etat) {
 		
 			case AUTHORISATION:
-				this.authorisation(requete);
+				sortie = this.authorisation(requete);
 				break;
 				
 			case TRANSACTION:
-				this.transaction(requete);
+				sortie = this.transaction(requete);
 				break;
 				
 			default: 
-				this.sendMessage("-ERR");
+				sortie = "-ERR";
 		}
+		
+		this.serveurPrincipal.getVue().sop(sortie.substring(0,4));
+		this.sendMessage(sortie);
 	}
 	
 	/**
@@ -204,10 +210,13 @@ public class ServeurSecondaire implements Runnable{
     		return Commun.ERR_INTEGER_ARGS; 
     	}
 		
-		if(this.listeMessages.size() < Integer.parseInt(params[1])) {
+		if(this.listeMessages.size() < Integer.parseInt(params[1]) || Integer.parseInt(params[1]) < 1) {
 			return Commun.ERR_MESSAGE_NOT_EXISTS.replaceFirst("_NUMMSG_", this.listeMessages.size()+"");
 		} else {
 			Message message = this.listeMessages.get(Integer.parseInt(params[1])-1);
+			if (message.getMarque()) {
+				return "-ERR Message " + params[1] + " déjà supprimé";
+			}
 			return "+OK " + message.getNumero() + " " + message.getTailleOctets();
 		}
 	}
@@ -229,7 +238,7 @@ public class ServeurSecondaire implements Runnable{
     		return Commun.ERR_INTEGER_ARGS; 
     	}
 		
-		if(this.listeMessages.size() < Integer.parseInt(params[1]) && Integer.parseInt(params[1]) > 0) {
+		if(this.listeMessages.size() < Integer.parseInt(params[1]) || Integer.parseInt(params[1]) < 1) {
 			return Commun.ERR_MESSAGE_NOT_EXISTS.replaceFirst("_NUMMSG_", this.listeMessages.size()+"");
 		} else {
 			Message message = this.listeMessages.get(Integer.parseInt(params[1])-1);
@@ -257,7 +266,7 @@ public class ServeurSecondaire implements Runnable{
     		return Commun.ERR_INTEGER_ARGS; 
     	}
 
-		if(this.listeMessages.size() < Integer.parseInt(params[1]) && Integer.parseInt(params[1]) > 0) {
+		if(this.listeMessages.size() < Integer.parseInt(params[1]) || Integer.parseInt(params[1]) < 1) {
 			return Commun.ERR_MESSAGE_NOT_EXISTS.replaceFirst("_NUMMSG_", this.listeMessages.size()+"");
 		} else {
 			Message message = this.listeMessages.get(Integer.parseInt(params[1])-1);
@@ -282,7 +291,7 @@ public class ServeurSecondaire implements Runnable{
 			m.setMarque(false);
 		}
 		
-		return "+OK";
+		return "+OK ";
 	}
 	
 	/**
@@ -311,96 +320,79 @@ public class ServeurSecondaire implements Runnable{
 	/**
 	 * Traitement de la commande lorsque le serveur est dans l'état AUTHORISATION
 	 * @param requete
+	 * @return String sortie
 	 */
-	private void authorisation(String requete) {
+	private String authorisation(String requete) {
 		
-		String sortie = "";
 		String[] params = requete.split(" ");
 		
 		switch(params[0]) {
 			
 			case "APOP" :
-				sortie = commandeAPOP(params);
-				break;
+				return commandeAPOP(params);
 			
 			case "USER" :
-				sortie = commandeUSER(params);
-				break;
+				return commandeUSER(params);
 				
 			case "PASS" :
-				sortie = commandePASS(requete);
-				break;
+				return commandePASS(requete);
 				
 			case "QUIT" :
-				sortie = commandeQUIT(false);
-				break;
+				return commandeQUIT(false);
 				
 			case "STAT" :
 			case "LIST" :
+			case "RETR" :
 			case "DELE" :
 			case "NOOP" :
 			case "RSET" :
-				sortie = Commun.ERR_IMPOSSIBLE_COMMAND;
-				break;
+				return Commun.ERR_IMPOSSIBLE_COMMAND;
 				
 			default :
-				sortie = Commun.ERR_UNKNOWN_COMMAND;
+				return Commun.ERR_UNKNOWN_COMMAND;
 		}
-		
-		this.sendMessage(sortie);
 	}
 	
 	/**
 	 * Traitement de la commande lorsque le serveur est dans l'état TRANSACTION
 	 * @param requete
+	 * @return String sortie
 	 */
-	private void transaction(String requete) {
+	private String transaction(String requete) {
 		
 		String [] params = requete.split(" ");
-		String sortie = "";
 		
 		switch(params[0]) {
 		
 			case "STAT" :
-				sortie = "+OK " + this.listeMessages.size() + " " + this.listeMessages.getTotalOctets();
-				break;
+				return "+OK " + this.listeMessages.size() + " " + this.listeMessages.getTotalOctets();
 				
 			case "LIST" :
-				sortie = commandeLIST(params);
-				break;
+				return commandeLIST(params);
 				
 			case "RETR" :
-				sortie = commandeRETR(params);
-				break;
+				return commandeRETR(params);
 				
 			case "DELE" :
-				sortie = commandeDELE(params);
-				break;
+				return commandeDELE(params);
 				
 			case "NOOP" :
-				sortie = "+OK";
-				break;
+				return "+OK ";
 				
 			case "RSET" :
-				sortie = commandeRSET();
-				break;
+				return commandeRSET();
 				
 			case "QUIT" :
-				sortie = commandeQUIT(true);
-				break;
+				return commandeQUIT(true);
 				
 			case "APOP" :
 			case "USER" :
 			case "PASS" :
-				sortie = Commun.ERR_IMPOSSIBLE_COMMAND;
-				break;
+				return Commun.ERR_IMPOSSIBLE_COMMAND;
 			
 			default :
-				sortie = Commun.ERR_UNKNOWN_COMMAND;
+				return Commun.ERR_UNKNOWN_COMMAND;
 		}
-		
-		this.serveurPrincipal.getVue().sop(sortie.substring(0,4));
-		this.sendMessage(sortie);
 	}
 	
 	/********
