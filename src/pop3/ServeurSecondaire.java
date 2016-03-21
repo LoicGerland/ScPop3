@@ -198,6 +198,12 @@ public class ServeurSecondaire implements Runnable{
 					+ this.listeMessages.getTousLesMessages();
 		}
 		
+		try {  
+		    Integer.parseInt(params[1]);  
+	    } catch(NumberFormatException nfe) {  
+    		return Commun.ERR_INTEGER_ARGS; 
+    	}
+		
 		if(this.listeMessages.size() < Integer.parseInt(params[1])) {
 			return Commun.ERR_MESSAGE_NOT_EXISTS.replaceFirst("_NUMMSG_", this.listeMessages.size()+"");
 		} else {
@@ -217,6 +223,12 @@ public class ServeurSecondaire implements Runnable{
 			return Commun.ERR_MISSING_ARGS;
 		}
 		
+		try {  
+		    Integer.parseInt(params[1]);  
+	    } catch(NumberFormatException nfe) {  
+    		return Commun.ERR_INTEGER_ARGS; 
+    	}
+		
 		if(this.listeMessages.size() < Integer.parseInt(params[1]) && Integer.parseInt(params[1]) > 0) {
 			return Commun.ERR_MESSAGE_NOT_EXISTS.replaceFirst("_NUMMSG_", this.listeMessages.size()+"");
 		} else {
@@ -224,7 +236,7 @@ public class ServeurSecondaire implements Runnable{
 			if (message.getMarque()) {
 				return "-ERR Message " + params[1] + " déjà supprimé";
 			}
-			return "+OK " + message.getTailleOctets() + " octets\n" + message.getCorps() + "\n";
+			return "+OK " + message.getTailleOctets() + " octets\n" + message.getCorps();
 		}
 	}
 	
@@ -238,6 +250,12 @@ public class ServeurSecondaire implements Runnable{
 		if(params.length < 2) {
 			return Commun.ERR_MISSING_ARGS;
 		}
+		
+		try {  
+		    Integer.parseInt(params[1]);  
+	    } catch(NumberFormatException nfe) {  
+    		return Commun.ERR_INTEGER_ARGS; 
+    	}
 
 		if(this.listeMessages.size() < Integer.parseInt(params[1]) && Integer.parseInt(params[1]) > 0) {
 			return Commun.ERR_MESSAGE_NOT_EXISTS.replaceFirst("_NUMMSG_", this.listeMessages.size()+"");
@@ -381,6 +399,7 @@ public class ServeurSecondaire implements Runnable{
 				sortie = Commun.ERR_UNKNOWN_COMMAND;
 		}
 		
+		this.serveurPrincipal.getVue().sop(sortie.substring(0,4));
 		this.sendMessage(sortie);
 	}
 	

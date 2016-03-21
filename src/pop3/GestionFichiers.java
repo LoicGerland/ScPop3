@@ -42,12 +42,14 @@ public class GestionFichiers {
 					nouveauMessage.setCorps("");
 					messages.add(nouveauMessage);
 					
-					while ((line = buff.readLine()) != null) {
+					while (line != null) {
 						nouveauMessage.setTailleOctets(nouveauMessage.getTailleOctets()+line.length());
-						nouveauMessage.setCorps(nouveauMessage.getCorps()+line);
-						if(line == ".")
+						nouveauMessage.setCorps(nouveauMessage.getCorps()+line+"\r\n");
+						if(line.equals("."))
 							break;
+						line = buff.readLine();
 					}
+					nouveauMessage.setCorps(nouveauMessage.getCorps().substring(0, nouveauMessage.getCorps().length()-2));
 					i++;
 				}
 			} finally {
@@ -81,15 +83,16 @@ public class GestionFichiers {
 	        int i = 0;
 	
 	        while((line = reader.readLine()) != null) {
-	            if(!listeMessages.get(i).getMarque())
-	            {
-					while ((line = reader.readLine()) != null) {
+				while (line != null) {
+					if(!listeMessages.get(i).getMarque())
+		            {
 						writer.write(line + "\n");
-						if(line == ".")
-							break;
-					}
-					i++;	            	
-	            }
+		            }
+					if(line.equals("."))
+						break;
+					line = reader.readLine();
+				}
+	            i++;
 	        }
 	        
 	        writer.close(); 

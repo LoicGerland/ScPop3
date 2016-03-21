@@ -64,7 +64,7 @@ public class ClientTest {
             if((reponse = input.readLine()) != null){
 				System.out.println("Serveur message: " + reponse);
 				if(reponse.startsWith("+OK")) {
-					for(int i=0;i<2;i++) {
+					while(!reponse.equals(".")) {
 						reponse = input.readLine();
 						System.out.println("Serveur message: " + reponse);
 					}
