@@ -5,7 +5,11 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.math.BigInteger;
 import java.net.Socket;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Date;
 
 import pop3.Commun.Etat;
 
@@ -26,6 +30,7 @@ public class ServeurSecondaire implements Runnable{
 	private ListeMessages listeMessages;
 	private String identifiantClient;
 	private int messageASupprimer;
+	private String timbre;
 
 	/**
 	 * Constructeur
@@ -50,12 +55,31 @@ public class ServeurSecondaire implements Runnable{
 		}
 	}
 
+	private String generateTimbre() {
+
+		Date d = new Date();
+		this.timbre = d.toString();
+		
+		MessageDigest m;
+		try {
+			m = MessageDigest.getInstance("MD5");
+			m.update(this.timbre.getBytes(),0,this.timbre.length());
+			this.timbre = new BigInteger(1,m.digest()).toString(16);
+		} catch (NoSuchAlgorithmException e) {
+			this.serveurPrincipal.getVue().sop("Erreur MD5");
+		}
+
+		return "<"+this.timbre+">";
+	}
+	
 	/**
 	 * Lancement du serveur secondaire
 	 */
 	public void run() {
+		
 		this.setEtat(Etat.CONNEXION);
-		sendMessage(Commun.OK_SERVER_READY);
+		
+		sendMessage(Commun.OK_SERVER_READY + " " + generateTimbre());
 		
 		this.setEtat(Etat.AUTHORISATION);
 		
@@ -134,12 +158,12 @@ public class ServeurSecondaire implements Runnable{
 		if(serveurPrincipal.checkLock(params[1]))
 			return Commun.ERR_USER_ALREADY_CONNECTED;
 		
-		if(GestionFichiers.LireAuthentification(params[1], params[2])) {
+		if(GestionFichiers.LireAuthentificationMD5(params[1], params[2], this.timbre)) {
 			this.identifiantClient = params[1];
 			this.listeMessages = GestionFichiers.LireMessages(identifiantClient);
 			this.setEtat(Etat.TRANSACTION);
 			this.serveurPrincipal.getVue().update();
-			return Commun.OK_HELLO + identifiantClient;
+			return Commun.OK_HELLO + identifiantClient + ", maildrop has "+listeMessages.size()+" messages.";
 		}
 		else {
 			return Commun.ERR_WRONG_LOGIN;

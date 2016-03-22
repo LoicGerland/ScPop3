@@ -7,8 +7,11 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Classe représentant la base de données des messages et des mots de passe
@@ -131,6 +134,48 @@ public class GestionFichiers {
 						&& parts[1].equals(motDePasse))
 							return true;
 					}
+				}
+			} finally {
+				buff.close();
+			}
+		} catch (FileNotFoundException fnfe) { System.out.println("Fichier d'authentification introuvable");
+		} catch (IOException e) { System.out.println("Erreur IO --" + e.toString()); }
+		
+		return false;
+	}
+	
+	/**
+	 * Authentification d'un utilisateur par son identifiant et son mot de passe
+	 * @param identifiant
+	 * @param motDePasse
+	 * @return boolean Succès de l'authentification
+	 */
+	public static boolean LireAuthentificationMD5(String identifiant, String motDePasse, String timbre) {
+		
+		String filePath = new File("").getAbsolutePath();
+		filePath += "/Fichiers/authentifications.txt";
+		
+		try {
+			BufferedReader buff = new BufferedReader(new FileReader(filePath));
+		 
+			try {
+				String line;
+				String[] parts;
+				while ((line = buff.readLine()) != null) {
+					parts = line.split(";");
+					
+					MessageDigest m;
+					try {
+						m = MessageDigest.getInstance("MD5");
+						parts[1] = timbre+parts[1];
+						m.update(parts[1].getBytes(),0,parts[1].length());
+						parts[1] = new BigInteger(1,m.digest()).toString(16);
+					} catch (NoSuchAlgorithmException e) {
+						System.out.println("Erreur MD5");
+					}
+					
+					if(parts[0].equals(identifiant) && parts[1].equals(motDePasse))
+						return true;
 				}
 			} finally {
 				buff.close();
