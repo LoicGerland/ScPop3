@@ -40,9 +40,7 @@ public class Serveur extends Thread {
 	public void run() {
 
 		this.running = true;
-		this.vue.sop("Lancement du serveur " 
-					+ socket.getInetAddress().getHostAddress() 
-					+ " sur le port : " + socket.getLocalPort());
+		this.vue.sop("Lancement du serveur");
 		
 		try {
 			while(this.running) {
