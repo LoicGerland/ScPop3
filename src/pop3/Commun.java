@@ -56,4 +56,5 @@ public class Commun {
 	public final static String ERR_USER_NEEDED = "-ERR Commande USER nécessaire avant";
 	public final static String ERR_MARKED_MESSAGE = "-ERR Certains messages marqués comme effacés non effacés";
 	public final static String ERR_MESSAGE_NOT_EXISTS = "-ERR Le message n'existe pas, seulement _NUMMSG_ message(s) dans votre boite";
+	public final static String ERR_USER_ALREADY_CONNECTED = "-ERR Utilisateur déjà connecté";
 }

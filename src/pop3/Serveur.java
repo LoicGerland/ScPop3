@@ -92,6 +92,19 @@ public class Serveur extends Thread {
 		this.vue.update();
 	}
 	
+	/**
+	 * Vérification des verrous utilisateur
+	 * @param serveurSecondaire
+	 * @return boolean
+	 */
+	public boolean checkLock(String id) {
+		for(ServeurSecondaire ss : listeThread) {
+			if(ss.getIdentifiantClient().equals(id))
+				return true;
+		}
+		return false;
+	}
+	
 	/********
 	 * 
 	 * GETTER

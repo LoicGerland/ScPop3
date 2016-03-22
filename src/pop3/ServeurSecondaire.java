@@ -131,6 +131,9 @@ public class ServeurSecondaire implements Runnable{
 		if(params.length < 3)
 			return Commun.ERR_MISSING_ARGS;
 		
+		if(serveurPrincipal.checkLock(params[1]))
+			return Commun.ERR_USER_ALREADY_CONNECTED;
+		
 		if(GestionFichiers.LireAuthentification(params[1], params[2])) {
 			this.identifiantClient = params[1];
 			this.listeMessages = GestionFichiers.LireMessages(identifiantClient);
@@ -152,6 +155,9 @@ public class ServeurSecondaire implements Runnable{
 		
 		if(params.length < 2)
 			return Commun.ERR_MISSING_ARGS;
+		
+		if(serveurPrincipal.checkLock(params[1]))
+			return Commun.ERR_USER_ALREADY_CONNECTED;
 		
 		if(GestionFichiers.LireAuthentification(params[1], null)) {
 			this.identifiantClient = params[1];

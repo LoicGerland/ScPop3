@@ -3,6 +3,12 @@ package pop3;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -35,7 +41,7 @@ public class Vue extends JFrame implements ActionListener {
 	public Vue() {
 		setTitle("Serveur");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setSize(550, 400);
+		setSize(570, 420);
 		setLocationRelativeTo(null);
         
 		contentPane = new JPanel();
@@ -71,19 +77,49 @@ public class Vue extends JFrame implements ActionListener {
 		contentPane.add(scrollInfoPane);
 	}
 	
+	/**
+	 * Démarrage du serveur et mise à jour de l'interface
+	 */
 	private void startServer() {
 		serveur = new Serveur(this);
 		if(serveur.getSocket() != null) {
-			String adresse = serveur.getSocket().getInetAddress().getHostAddress();
-			String port = serveur.getSocket().getLocalPort()+"";
 			btnStartStop.setText("Arreter");
-			adresseLabel.setText("Adresse : "+adresse+":"+port);
 			statusLabel.setText("Statut : En marche");
 			statusLabel.setForeground(Color.green);
+			this.findMyIp();
 			serveur.start();
 		}
 	}
 	
+	/**
+	 * Trouver l'IP de la machine sur laquelle le serveur est démarré
+	 */
+	private void findMyIp() {
+		String IPADDRESS_PATTERN = "(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
+		Pattern pattern = Pattern.compile(IPADDRESS_PATTERN);
+		Matcher matcher;
+		Enumeration<NetworkInterface> e;
+		try {
+			e = NetworkInterface.getNetworkInterfaces();
+			while (e.hasMoreElements()) {
+				Enumeration<InetAddress> i = e.nextElement().getInetAddresses();
+				while (i.hasMoreElements()) {
+					InetAddress a = i.nextElement();
+					matcher = pattern.matcher(a.getHostAddress());
+					if(matcher.find() && !a.isLoopbackAddress() && !a.isSiteLocalAddress()) {
+						//this.sop(a.getHostName() + " -> "+ a.getHostAddress());
+						adresseLabel.setText("Adresse : "+a.getHostAddress()+":"+Commun.PORT);
+					}	
+				}
+			}
+		} catch (SocketException e1) {
+			System.out.println("Erreur - Lecture des adresses Ip");
+		}
+	}
+	
+	/**
+	 * Arrêt du serveur et mise à jour de l'interface
+	 */
 	private void stopServer() {
 		btnStartStop.setText("Lancer");
 		adresseLabel.setText("Adresse : ");
@@ -104,11 +140,17 @@ public class Vue extends JFrame implements ActionListener {
 		}
 	}
 
+	/**
+	 * Affichage de données dans l'interface et la console
+	 */
 	public void sop(String string) {
 		this.txtInfoArea.insert(string+"\n", 0);
 		System.out.println(string);
 	}
 	
+	/**
+	 * Mise à jour de la liste des clients dans l'interface
+	 */
 	public void update() {
 		this.txtClientArea.setText("");
 		for(ServeurSecondaire ss : serveur.getListeThread()) {
