@@ -145,9 +145,10 @@ public class GestionFichiers {
 	}
 	
 	/**
-	 * Authentification d'un utilisateur par son identifiant et son mot de passe
+	 * Authentification d'un utilisateur par son identifiant et son mot de passe encodé avec le timbre-à-date
 	 * @param identifiant
 	 * @param motDePasse
+	 * @param timbre
 	 * @return boolean Succès de l'authentification
 	 */
 	public static boolean LireAuthentificationMD5(String identifiant, String motDePasse, String timbre) {

@@ -13,10 +13,10 @@ import java.util.ArrayList;
  */
 public class Serveur extends Thread {
 
-	private Vue vue;
-	private ServerSocket socket;
+	private Vue view;
 	private Boolean running;
-	private ArrayList<ServeurSecondaire> listeThread;
+	private ServerSocket socket;
+	private ArrayList<ServeurSecondaire> listSecondary;
 
 	/**
 	 * Constructeur
@@ -24,14 +24,14 @@ public class Serveur extends Thread {
 	 */
 	public Serveur(Vue vue) {
 		
-		this.vue = vue;
+		this.view = vue;
+		this.running = false;
+		this.listSecondary = new ArrayList<ServeurSecondaire>();
 		try {
 			this.socket = new ServerSocket(Commun.PORT);
 		} catch (IOException e) {
-			this.vue.sop(Commun.ERROR_SOCKET_INSTANTIATION);
+			this.view.sop(Commun.ERROR_SOCKET_INSTANTIATION);
 		}
-		this.running = false;
-		this.listeThread = new ArrayList<ServeurSecondaire>();
 	}
 
 	/**
@@ -40,25 +40,21 @@ public class Serveur extends Thread {
 	public void run() {
 
 		this.running = true;
-		this.vue.sop("Lancement du serveur");
+		this.view.sop("Lancement du serveur");
 		
 		try {
 			while(this.running) {
 				Socket client = this.socket.accept();
-				this.vue.sop("Nouveau client ! Adresse : " + client.getInetAddress());
-				this.vue.sop("Demarrage du thread N°"+(listeThread.size()+1));
-				ServeurSecondaire thread = new ServeurSecondaire(this, client);
-				this.listeThread.add(thread);
-				this.vue.update();
-				new Thread(thread).start();
+				addSecondaryServer(client);
 			}
-		} catch (IOException e) {			this.vue.sop("Arret du serveur");
+		} catch (IOException e) {
+			//Arrêt du serveur par envoi d'exception car accept() est bloquant			this.view.sop("Arrêt du serveur");
 		}
 		finally
 		{
 			try { this.socket.close(); }
 			catch (IOException e) {
-				this.vue.sop(Commun.ERROR_CLOSE_SOCKET);
+				this.view.sop(Commun.ERROR_CLOSE_SOCKET);
 			}
 		}
 	}
@@ -69,25 +65,39 @@ public class Serveur extends Thread {
 	 */
 	public boolean stopServeur() {
 		try {
-			this.listeThread.clear();
-			this.setRunning(false);
+			this.listSecondary.clear();
+			this.running = false;
 			this.socket.close();
 			return true;
 		} catch (IOException e1) {
-			vue.sop(Commun.ERROR_STOP_SERVER);
+			view.sop(Commun.ERROR_STOP_SERVER);
 			return false;
 		}
 	}
 	
 	/**
-	 * Suppression d'un serveru secondaire de la liste 
+	 * Ajout d'un serveur secondaire de la liste 
+	 * lors de l'apparition d'un nouveau client
+	 * @param serveurSecondaire
+	 */
+	public void addSecondaryServer(Socket client) {
+		this.view.sop("Nouveau client ! Adresse : " + client.getInetAddress());
+		this.view.sop("Démarrage du thread N°"+(listSecondary.size()+1));
+		ServeurSecondaire thread = new ServeurSecondaire(this, client);
+		this.listSecondary.add(thread);
+		this.view.update();
+		new Thread(thread).start();
+	}
+	
+	/**
+	 * Suppression d'un serveur secondaire de la liste 
 	 * lors de l'arrêt d'un serveur secondaire
 	 * @param serveurSecondaire
 	 */
-	public void removeServeurSecondaire(ServeurSecondaire serveurSecondaire) {
-		vue.sop("Arret du thread N°"+(listeThread.indexOf(serveurSecondaire)+1));
-		this.listeThread.remove(serveurSecondaire);
-		this.vue.update();
+	public void removeSecondaryServer(ServeurSecondaire serveurSecondaire) {
+		view.sop("Arrêt du thread N°"+(listSecondary.indexOf(serveurSecondaire)+1));
+		this.listSecondary.remove(serveurSecondaire);
+		this.view.update();
 	}
 	
 	/**
@@ -96,8 +106,8 @@ public class Serveur extends Thread {
 	 * @return boolean
 	 */
 	public boolean checkLock(String id) {
-		for(ServeurSecondaire ss : listeThread) {
-			if(ss.getIdentifiantClient().equals(id))
+		for(ServeurSecondaire ss : listSecondary) {
+			if(ss.getClientLogin().equals(id))
 				return true;
 		}
 		return false;
@@ -109,27 +119,17 @@ public class Serveur extends Thread {
 	 * 
 	 **************/
 	
-	public ArrayList<ServeurSecondaire> getListeThread() {
-		return listeThread;
+	public ArrayList<ServeurSecondaire> getListSecondary() {
+		return listSecondary;
 	}
 	public ServerSocket getSocket() {
 		return socket;
 	}
-	public Vue getVue() {
-		return vue;
+	public Vue getView() {
+		return view;
 	}
 	public Boolean isRunning() {
 		return running;
-	}
-	
-	/********
-	 * 
-	 * SETTER
-	 * 
-	 **************/
-	
-	public void setRunning(Boolean running) {
-		this.running = running;
 	}
 }
 

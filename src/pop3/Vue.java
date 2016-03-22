@@ -36,7 +36,7 @@ public class Vue extends JFrame implements ActionListener {
     private JScrollPane scrollClientPane;
     private JScrollPane scrollInfoPane;
 	
-	private Serveur serveur;
+	private Serveur server;
 
 	public Vue() {
 		setTitle("Serveur");
@@ -78,20 +78,6 @@ public class Vue extends JFrame implements ActionListener {
 	}
 	
 	/**
-	 * Démarrage du serveur et mise à jour de l'interface
-	 */
-	private void startServer() {
-		serveur = new Serveur(this);
-		if(serveur.getSocket() != null) {
-			btnStartStop.setText("Arreter");
-			statusLabel.setText("Statut : En marche");
-			statusLabel.setForeground(Color.green);
-			this.findMyIp();
-			serveur.start();
-		}
-	}
-	
-	/**
 	 * Trouver l'IP de la machine sur laquelle le serveur est démarré
 	 */
 	private void findMyIp() {
@@ -107,13 +93,26 @@ public class Vue extends JFrame implements ActionListener {
 					InetAddress a = i.nextElement();
 					matcher = pattern.matcher(a.getHostAddress());
 					if(matcher.find() && !a.isLoopbackAddress() && !a.isSiteLocalAddress()) {
-						//this.sop(a.getHostName() + " -> "+ a.getHostAddress());
 						adresseLabel.setText("Adresse : "+a.getHostAddress()+":"+Commun.PORT);
 					}	
 				}
 			}
 		} catch (SocketException e1) {
 			System.out.println("Erreur - Lecture des adresses Ip");
+		}
+	}
+	
+	/**
+	 * Démarrage du serveur et mise à jour de l'interface
+	 */
+	private void startServer() {
+		server = new Serveur(this);
+		if(server.getSocket() != null) {
+			btnStartStop.setText("Arreter");
+			statusLabel.setText("Statut : En marche");
+			statusLabel.setForeground(Color.green);
+			this.findMyIp();
+			server.start();
 		}
 	}
 	
@@ -125,14 +124,14 @@ public class Vue extends JFrame implements ActionListener {
 		adresseLabel.setText("Adresse : ");
 		statusLabel.setText("Statut : Arret");
 		statusLabel.setForeground(Color.red);
-		serveur.stopServeur();
+		server.stopServeur();
 		this.update();
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource() == btnStartStop) {
-			if(serveur != null && serveur.isRunning()) {
+			if(server != null && server.isRunning()) {
 				stopServer();
 			} else {
 				startServer();
@@ -153,9 +152,9 @@ public class Vue extends JFrame implements ActionListener {
 	 */
 	public void update() {
 		this.txtClientArea.setText("");
-		for(ServeurSecondaire ss : serveur.getListeThread()) {
+		for(ServeurSecondaire ss : server.getListSecondary()) {
 			this.txtClientArea.insert(
-					ss.getIdentifiantClient() + " : " + ss.getClientSocket().getInetAddress().getHostAddress() + "\n", 0
+					ss.getClientLogin() + " : " + ss.getClientSocket().getInetAddress().getHostAddress() + "\n", 0
 			);
 		}
 		
