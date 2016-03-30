@@ -5,6 +5,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+
 /**
  * Classe représentant le serveur principal qui accepte les connexions client
  * et qui redirige vers des serveurs secondaires au moyen de thread
@@ -16,6 +19,7 @@ public class Serveur extends Thread {
 	private Vue view;
 	private Boolean running;
 	private ServerSocket socket;
+	private SSLServerSocket sslSocket;
 	private ArrayList<ServeurSecondaire> listSecondary;
 
 	/**
@@ -28,7 +32,18 @@ public class Serveur extends Thread {
 		this.running = false;
 		this.listSecondary = new ArrayList<ServeurSecondaire>();
 		try {
-			this.socket = new ServerSocket(Commun.PORT);
+			//this.socket = new ServerSocket(Commun.PORT);
+			SSLServerSocketFactory fab = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+			this.sslSocket =(SSLServerSocket) fab.createServerSocket(Commun.PORT);
+			String [] ciphers = this.sslSocket.getSupportedCipherSuites();
+
+			for(String s : ciphers) {
+				this.view.sop(s);
+			}
+			
+			String [] pickedCipher = {"TLS_RSA_WITH_AES_128_CBC_SHA"};
+			sslSocket.setEnabledCipherSuites(pickedCipher);
+			
 		} catch (IOException e) {
 			this.view.sop(Commun.ERROR_SOCKET_INSTANTIATION);
 		}
