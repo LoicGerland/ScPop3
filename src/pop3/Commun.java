@@ -47,8 +47,8 @@ public class Commun {
 	public final static String OK_HELLO = "+OK Bonjour ";
 	public final static String OK_BOX_NAME = "+OK Le nom de boite est valide";
 	public final static String OK_SERVER_LOGOUT = "+OK Déconnexion du serveur POP3";
-	public final static String ERR_MISSING_ARGS = "-ERR Paramètres manquants";
-	public final static String ERR_INTEGER_ARGS = "-ERR Paramètres non conforme (entier)";
+	public final static String ERR_MISSING_ARGS = "-ERR Paramètre(s) manquant(s)";
+	public final static String ERR_INTEGER_ARGS = "-ERR Paramètres non conformes (entier)";
 	public final static String ERR_UNKNOWN_COMMAND = "-ERR Commande inconnue";
 	public final static String ERR_IMPOSSIBLE_COMMAND = "-ERR Commande impossible dans cet état";
 	public final static String ERR_WRONG_LOGIN = "-ERR Identifiants incorrects";

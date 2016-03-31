@@ -66,9 +66,9 @@ public class ServeurSecondaire implements Runnable{
 	 */
 	private void generateStamp() {
 
-		Date d = new Date();
+		Date date = new Date();
 		String uniqueID = UUID.randomUUID().toString();
-		this.stamp = d.toString()+uniqueID;
+		this.stamp = date.toString()+uniqueID;
 		
 		MessageDigest m;
 		try {
@@ -226,7 +226,7 @@ public class ServeurSecondaire implements Runnable{
 			this.setEtat(Etat.TRANSACTION);
 			this.listMessages = GestionFichiers.LireMessages(clientLogin);
 			this.primaryServer.getView().update();
-			return Commun.OK_HELLO + clientLogin;
+			return Commun.OK_HELLO + clientLogin + ", maildrop has "+listMessages.size()+" messages.";
 		}
 		else {
 			return Commun.ERR_WRONG_LOGIN;

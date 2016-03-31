@@ -18,8 +18,8 @@ public class Serveur extends Thread {
 
 	private Vue view;
 	private Boolean running;
-	private ServerSocket socket;
-	private SSLServerSocket sslSocket;
+	//private ServerSocket socket;
+	private SSLServerSocket socket;
 	private ArrayList<ServeurSecondaire> listSecondary;
 
 	/**
@@ -34,15 +34,17 @@ public class Serveur extends Thread {
 		try {
 			//this.socket = new ServerSocket(Commun.PORT);
 			SSLServerSocketFactory fab = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-			this.sslSocket =(SSLServerSocket) fab.createServerSocket(Commun.PORT);
-			String [] ciphers = this.sslSocket.getSupportedCipherSuites();
+			this.socket =(SSLServerSocket) fab.createServerSocket(Commun.PORT);
+			String [] ciphers = this.socket.getSupportedCipherSuites();
 
+			/*
 			for(String s : ciphers) {
 				this.view.sop(s);
 			}
 			
 			String [] pickedCipher = {"TLS_RSA_WITH_AES_128_CBC_SHA"};
-			sslSocket.setEnabledCipherSuites(pickedCipher);
+			*/
+			socket.setEnabledCipherSuites(ciphers);
 			
 		} catch (IOException e) {
 			this.view.sop(Commun.ERROR_SOCKET_INSTANTIATION);

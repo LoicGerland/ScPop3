@@ -5,15 +5,17 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.net.InetAddress;
-import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+
 public class ClientTest {
 
-	private static int    _port;
-    private static Socket _socket;
+	private static int _port;
+    //private static Socket _socket;
+    private static SSLSocket _socket;
 
     public static void main(String[] args)
     {
@@ -23,7 +25,12 @@ public class ClientTest {
         try
         {
             _port   = Commun.PORT;
-            _socket = new Socket(InetAddress.getByName("localhost"), _port);
+            //_socket = new Socket(InetAddress.getByName("localhost"), _port);
+            SSLSocketFactory fabrique = (SSLSocketFactory) SSLSocketFactory.getDefault();
+            _socket = (SSLSocket) fabrique.createSocket("127.0.0.1", _port);
+
+            String [] ciphers = _socket.getSupportedCipherSuites();
+            _socket.setEnabledCipherSuites(ciphers);
 
             // Open stream
             input = new BufferedReader(new InputStreamReader(_socket.getInputStream()));
