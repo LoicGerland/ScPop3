@@ -35,16 +35,22 @@ public class Serveur extends Thread {
 			//this.socket = new ServerSocket(Commun.PORT);
 			SSLServerSocketFactory fab = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
 			this.socket =(SSLServerSocket) fab.createServerSocket(Commun.PORT);
-			String [] ciphers = this.socket.getSupportedCipherSuites();
-
-			/*
-			for(String s : ciphers) {
-				this.view.sop(s);
-			}
 			
-			String [] pickedCipher = {"TLS_RSA_WITH_AES_128_CBC_SHA"};
-			*/
-			socket.setEnabledCipherSuites(ciphers);
+			//Récupération de tous les ciphers
+			String [] ciphers = this.socket.getSupportedCipherSuites();
+			
+			//Contruction d'un tableau de tous les ciphers contenant "anon"
+			ArrayList<String> pickedCiphersList = new ArrayList<String>();
+			for(String cipher : ciphers) {
+				if(cipher.contains("anon")) {
+					pickedCiphersList.add(cipher);
+				}
+			}
+
+			String [] pickedCiphers = new String[pickedCiphersList.size()];
+			pickedCiphers = pickedCiphersList.toArray(pickedCiphers);
+			
+			socket.setEnabledCipherSuites(pickedCiphers);
 			
 		} catch (IOException e) {
 			this.view.sop(Commun.ERROR_SOCKET_INSTANTIATION);

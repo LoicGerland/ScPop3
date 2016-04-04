@@ -92,7 +92,7 @@ public class Vue extends JFrame implements ActionListener {
 				while (i.hasMoreElements()) {
 					InetAddress a = i.nextElement();
 					matcher = pattern.matcher(a.getHostAddress());
-					if(matcher.find() && !a.isLoopbackAddress() ) {
+					if(matcher.find() && !a.isLoopbackAddress() && !a.isSiteLocalAddress() ) {
 						adresseLabel.setText("Adresse : "+a.getHostAddress()+":"+Commun.PORT);
 					}	
 				}
