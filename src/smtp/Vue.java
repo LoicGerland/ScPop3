@@ -88,7 +88,7 @@ public class Vue extends JFrame implements ActionListener {
 					InetAddress a = i.nextElement();
 					matcher = pattern.matcher(a.getHostAddress());
 					if(matcher.find() && !a.isLoopbackAddress() && !a.isSiteLocalAddress() ) {
-						adresseLabel.setText("Adresse : "+a.getHostAddress()+":"+Commun.PORT_POP3S);
+						adresseLabel.setText("Adresse : "+a.getHostAddress()+":"+Commun.PORT_SMTP);
 					}	
 				}
 			}

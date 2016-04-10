@@ -40,7 +40,7 @@ public class ClientTest {
 			
 			Scanner sc = new Scanner(System.in);
 			
-			while(reponse != Commun.SMTP_SERVER_CLOSED) {
+			while(!reponse.equals(Commun.SMTP_SERVER_CLOSED)) {
 				System.out.println("Commande :");
 				String str = sc.nextLine();
 				

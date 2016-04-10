@@ -84,4 +84,6 @@ public class Commun {
 	 */
 	public final static String SMTP_SERVER_READY = "220 Simple Mail Transfer Service Ready";
 	public final static String SMTP_SERVER_CLOSED = "221 Service closing transmission channel";
+	public final static String SMTP_501_ARGS = "501 Syntax error in parameters or arguments";
+	public final static String SMTP_500_UNKNOWN_COMMAND = "500 Syntax error, command unrecognized";
 }

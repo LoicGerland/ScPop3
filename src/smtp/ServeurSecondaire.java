@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 
 import Commun.Commun;
+import Commun.GestionFichiers;
 import Commun.Message;
 import Commun.Commun.EtatSMTP;
 
@@ -127,7 +128,7 @@ public class ServeurSecondaire implements Runnable{
 				break;
 				
 			default: 
-				sortie = "-ERR";
+				sortie = "500 Syntax error, command unrecognized";
 		}
 		
 		this.primaryServer.getView().sop(sortie.substring(0,3));
@@ -141,12 +142,12 @@ public class ServeurSecondaire implements Runnable{
 	 */
 	private String commandeEHLO(String [] params) {
 		
-		if(params.length < 3)
-			return Commun.ERR_MISSING_ARGS;
+		if(params.length < 2)
+			return Commun.SMTP_501_ARGS;
 		
 		this.setEtat(EtatSMTP.PRESENTATION);
 		
-		return "250-foo.com greets bar.com";
+		return "250 srv.polytech.com";
 	}
 	
 	/**
@@ -154,12 +155,12 @@ public class ServeurSecondaire implements Runnable{
 	 * @param params
 	 * @return String message
 	 */
-	private String commandeMAIL(String [] params) {
+	private String commandeMAIL(String requete) {
 		
-		if(params.length < 2)
-			return Commun.ERR_MISSING_ARGS;
+		if(!requete.contains("<") || !requete.contains(">"))
+			return Commun.SMTP_501_ARGS;
 		
-		this.sender = params[1];
+		this.sender = requete.substring(requete.indexOf("<")+1, requete.indexOf(">"));
 		
 		this.setEtat(EtatSMTP.TRANSACTION);
 		
@@ -174,9 +175,9 @@ public class ServeurSecondaire implements Runnable{
 	private String commandeRCPT(String requete) {
 		
 		if(!requete.contains("<") || !requete.contains(">"))
-			return Commun.ERR_MISSING_ARGS;
+			return Commun.SMTP_501_ARGS;
 		
-		String receiver = requete.substring(requete.indexOf("<"), requete.indexOf(">"));
+		String receiver = requete.substring(requete.indexOf("<")+1, requete.indexOf(">"));
 		receivers.add(receiver);
 		
 		return "250 OK";
@@ -204,8 +205,11 @@ public class ServeurSecondaire implements Runnable{
 		System.out.println("Sender : "+this.sender);
 		for(String receiver : this.receivers) {
 			System.out.println("Receiver : "+receiver);
+			GestionFichiers.AjouterMessage(receiver, message);
 		}
 		System.out.println("Message : "+this.message.getCorps());
+		
+		
 		
 		return Commun.SMTP_SERVER_CLOSED;
 	}
@@ -230,10 +234,10 @@ public class ServeurSecondaire implements Runnable{
 			case "RCPT" :
 			case "MAIL" :
 			case "DATA" :
-				return Commun.ERR_IMPOSSIBLE_COMMAND;
+				return Commun.SMTP_500_UNKNOWN_COMMAND;
 			
 			default :
-				return Commun.ERR_UNKNOWN_COMMAND;
+				return Commun.SMTP_500_UNKNOWN_COMMAND;
 		}
 	}
 	
@@ -249,7 +253,7 @@ public class ServeurSecondaire implements Runnable{
 		switch(params[0]) {
 			
 			case "MAIL" :
-				return commandeMAIL(params);
+				return commandeMAIL(requete);
 				
 			case "QUIT" :
 				return commandeQUIT();
@@ -257,10 +261,10 @@ public class ServeurSecondaire implements Runnable{
 			case "RCPT" :
 			case "EHLO" :
 			case "DATA" :
-				return Commun.ERR_IMPOSSIBLE_COMMAND;
+				return Commun.SMTP_500_UNKNOWN_COMMAND;
 			
 			default :
-				return Commun.ERR_UNKNOWN_COMMAND;
+				return Commun.SMTP_500_UNKNOWN_COMMAND;
 		}
 	}
 	
@@ -286,10 +290,10 @@ public class ServeurSecondaire implements Runnable{
 		
 		case "EHLO" :
 		case "MAIL" :
-			return Commun.ERR_IMPOSSIBLE_COMMAND;
+			return Commun.SMTP_500_UNKNOWN_COMMAND;
 			
 		default :
-			return Commun.ERR_UNKNOWN_COMMAND;
+			return Commun.SMTP_500_UNKNOWN_COMMAND;
 		}
 	}
 	
@@ -310,6 +314,7 @@ public class ServeurSecondaire implements Runnable{
 			} catch (IOException e) { e.printStackTrace(); }
 		}
 		
+		this.setEtat(EtatSMTP.TRANSACTION);
 		
 		return "250 OK";
 	}

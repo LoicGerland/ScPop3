@@ -186,4 +186,22 @@ public class GestionFichiers {
 		
 		return false;
 	}
+	
+	/**
+	 * Ajout d'un message dans la boite aux lettres associée à l'identifiant
+	 * @param identifiant
+	 * @param listeMessages
+	 */
+	public static void AjouterMessage(String identifiantClient, Message message) {
+		
+		String filePath = new File("").getAbsolutePath();
+		filePath += "/Fichiers/boites/" + identifiantClient + ".txt";
+
+		try {
+			FileWriter fw = new FileWriter(filePath,true);
+			fw.write(message.getCorps());
+		    fw.close();
+		} catch (FileNotFoundException fnfe) { System.out.println("Fichier de messages introuvable");
+		} catch (IOException e) { System.out.println("Erreur IO --" + e.toString()); }
+	}
 }

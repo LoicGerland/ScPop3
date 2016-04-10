@@ -47,7 +47,7 @@ public class ClientTest {
 			
 			Scanner sc = new Scanner(System.in);
 			
-			while(reponse != Commun.OK_SERVER_LOGOUT) {
+			while(!reponse.equals(Commun.OK_SERVER_LOGOUT)) {
 				System.out.println("Commande :");
 				String str = sc.nextLine();
 				
