@@ -1,4 +1,4 @@
-package pop3;
+package Commun;
 
 /**
  * Classe représentant les variables final et/ou static du serveur
@@ -10,12 +10,17 @@ public class Commun {
 	/**
 	 * Port du serveur POP3
 	 */
-	public final static int PORT = 110;
+	public final static int PORT_POP3S = 1026;
+	
+	/**
+	 * Port du serveur SMTP
+	 */
+	public final static int PORT_SMTP = 1027;
 	
 	/**
 	 * Etat du serveur POP3
 	 */
-	public enum Etat {
+	public enum EtatPOP3 {
 		
 		INITIALISATION("Initialisation"),
 		CONNEXION("Connexion"),
@@ -25,7 +30,23 @@ public class Commun {
 		MISEAJOUR("Mise à jour");
 
 		private String nom = "";
-		Etat(String nom) { this.nom = nom; }
+		EtatPOP3(String nom) { this.nom = nom; }
+		public String toString() { return nom; }
+	}
+	
+	/**
+	 * Etat du serveur SMTP
+	 */
+	public enum EtatSMTP {
+		
+		INITIALISATION("Initialisation"),
+		CONNEXION("Connexion"),
+		PRESENTATION("Présentation"),
+		TRANSACTION("Transaction"),
+		LECTURE("Lecture");
+
+		private String nom = "";
+		EtatSMTP(String nom) { this.nom = nom; }
 		public String toString() { return nom; }
 	}
 	
@@ -41,7 +62,7 @@ public class Commun {
 	public final static String ERROR_SEND_MESSAGE = "Erreur - Envoi du message";
 	
 	/**
-	 * Messages de retour du serveur au client
+	 * Messages de retour du serveur au client POP3
 	 */
 	public final static String OK_SERVER_READY = "+OK POP3 server ready";
 	public final static String OK_HELLO = "+OK Bonjour ";
@@ -57,4 +78,10 @@ public class Commun {
 	public final static String ERR_MARKED_MESSAGE = "-ERR Certains messages marqués comme effacés non effacés";
 	public final static String ERR_MESSAGE_NOT_EXISTS = "-ERR Le message n'existe pas, seulement _NUMMSG_ message(s) dans votre boite";
 	public final static String ERR_USER_ALREADY_CONNECTED = "-ERR Utilisateur déjà connecté";
+	
+	/**
+	 * Messages de retour du serveur au client SMTP
+	 */
+	public final static String SMTP_SERVER_READY = "220 Simple Mail Transfer Service Ready";
+	public final static String SMTP_SERVER_CLOSED = "221 Service closing transmission channel";
 }

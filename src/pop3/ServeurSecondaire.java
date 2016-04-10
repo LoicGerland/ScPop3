@@ -12,7 +12,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.UUID;
 
-import pop3.Commun.Etat;
+import Commun.Commun;
+import Commun.GestionFichiers;
+import Commun.ListeMessages;
+import Commun.Message;
+import Commun.Commun.EtatPOP3;
 
 /**
  * Classe représentant le serveur serveur secondaire
@@ -24,7 +28,7 @@ public class ServeurSecondaire implements Runnable{
 
 	private Serveur primaryServer;
 	private Boolean running;
-	private Etat etat;
+	private EtatPOP3 etat;
 	
 	private final Socket clientSocket;
 	private String stamp;
@@ -44,7 +48,7 @@ public class ServeurSecondaire implements Runnable{
 		this.clientSocket = clientSocket;
 		
 		this.running = true;
-		this.setEtat(Etat.INITIALISATION);
+		this.setEtat(EtatPOP3.INITIALISATION);
 		this.listMessages = new ListeMessages();
 		this.clientLogin = "Inconnu";
 		this.messagesToDelete = 0;
@@ -87,11 +91,11 @@ public class ServeurSecondaire implements Runnable{
 	 */
 	public void run() {
 		
-		this.setEtat(Etat.CONNEXION);
+		this.setEtat(EtatPOP3.CONNEXION);
 		
 		sendMessage(Commun.OK_SERVER_READY + " <" + this.stamp + ">");
 		
-		this.setEtat(Etat.AUTHORISATION);
+		this.setEtat(EtatPOP3.AUTHORISATION);
 		
 		while(this.running) {
 		String requete;
@@ -173,7 +177,7 @@ public class ServeurSecondaire implements Runnable{
 		if(GestionFichiers.LireAuthentificationMD5(params[1], params[2], this.stamp)) {
 			this.clientLogin = params[1];
 			this.listMessages = GestionFichiers.LireMessages(clientLogin);
-			this.setEtat(Etat.TRANSACTION);
+			this.setEtat(EtatPOP3.TRANSACTION);
 			this.primaryServer.getView().update();
 			return Commun.OK_HELLO + clientLogin + ", maildrop has "+listMessages.size()+" messages.";
 		}
@@ -223,7 +227,7 @@ public class ServeurSecondaire implements Runnable{
 		}
 
 		if(GestionFichiers.LireAuthentification(this.clientLogin, params[1])) {
-			this.setEtat(Etat.TRANSACTION);
+			this.setEtat(EtatPOP3.TRANSACTION);
 			this.listMessages = GestionFichiers.LireMessages(clientLogin);
 			this.primaryServer.getView().update();
 			return Commun.OK_HELLO + clientLogin + ", maildrop has "+listMessages.size()+" messages.";
@@ -346,7 +350,7 @@ public class ServeurSecondaire implements Runnable{
 		this.running = false;
 		
 		if(delete) {
-			this.setEtat(Etat.MISEAJOUR);
+			this.setEtat(EtatPOP3.MISEAJOUR);
 			int beforeDelete = this.listMessages.size();
 			if(this.messagesToDelete > 0)
 				GestionFichiers.SupprimerMessages(this.clientLogin, this.listMessages);
@@ -443,7 +447,7 @@ public class ServeurSecondaire implements Runnable{
 	 * 
 	 **************/
 	
-	public Etat getEtat() {
+	public EtatPOP3 getEtat() {
 		return etat;
 	}
 
@@ -461,7 +465,7 @@ public class ServeurSecondaire implements Runnable{
 	 * 
 	 **************/
 	
-	public void setEtat(Etat etat) {
+	public void setEtat(EtatPOP3 etat) {
 		this.etat = etat;
 		System.out.println("Etat du serveur : " + this.etat);
 	}

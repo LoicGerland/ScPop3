@@ -1,12 +1,8 @@
-package pop3;
+package smtp;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
 
 import Commun.Commun;
 
@@ -20,9 +16,7 @@ public class Serveur extends Thread {
 
 	private Vue view;
 	private Boolean running;
-	//private ServerSocket socket;
-	private SSLServerSocket socket;
-	private ArrayList<ServeurSecondaire> listSecondary;
+	private ServerSocket socket;
 
 	/**
 	 * Constructeur
@@ -32,27 +26,8 @@ public class Serveur extends Thread {
 		
 		this.view = vue;
 		this.running = false;
-		this.listSecondary = new ArrayList<ServeurSecondaire>();
 		try {
-			//this.socket = new ServerSocket(Commun.PORT);
-			SSLServerSocketFactory fab = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-			this.socket =(SSLServerSocket) fab.createServerSocket(Commun.PORT_POP3S);
-			
-			//Récupération de tous les ciphers
-			String [] ciphers = this.socket.getSupportedCipherSuites();
-			
-			//Contruction d'un tableau de tous les ciphers contenant "anon"
-			ArrayList<String> pickedCiphersList = new ArrayList<String>();
-			for(String cipher : ciphers) {
-				if(cipher.contains("anon")) {
-					pickedCiphersList.add(cipher);
-				}
-			}
-
-			String [] pickedCiphers = new String[pickedCiphersList.size()];
-			pickedCiphers = pickedCiphersList.toArray(pickedCiphers);
-			
-			socket.setEnabledCipherSuites(pickedCiphers);
+			this.socket = new ServerSocket(Commun.PORT_SMTP);
 			
 		} catch (IOException e) {
 			this.view.sop(Commun.ERROR_SOCKET_INSTANTIATION);
@@ -90,7 +65,6 @@ public class Serveur extends Thread {
 	 */
 	public boolean stopServeur() {
 		try {
-			this.listSecondary.clear();
 			this.running = false;
 			this.socket.close();
 			return true;
@@ -107,35 +81,8 @@ public class Serveur extends Thread {
 	 */
 	public void addSecondaryServer(Socket client) {
 		this.view.sop("Nouveau client ! Adresse : " + client.getInetAddress());
-		this.view.sop("Démarrage du thread N°"+(listSecondary.size()+1));
 		ServeurSecondaire thread = new ServeurSecondaire(this, client);
-		this.listSecondary.add(thread);
-		this.view.update();
 		new Thread(thread).start();
-	}
-	
-	/**
-	 * Suppression d'un serveur secondaire de la liste 
-	 * lors de l'arrêt d'un serveur secondaire
-	 * @param serveurSecondaire
-	 */
-	public void removeSecondaryServer(ServeurSecondaire serveurSecondaire) {
-		view.sop("Arrêt du thread N°"+(listSecondary.indexOf(serveurSecondaire)+1));
-		this.listSecondary.remove(serveurSecondaire);
-		this.view.update();
-	}
-	
-	/**
-	 * Vérification des verrous utilisateur
-	 * @param serveurSecondaire
-	 * @return boolean
-	 */
-	public boolean checkLock(String id) {
-		for(ServeurSecondaire ss : listSecondary) {
-			if(ss.getClientLogin().equals(id))
-				return true;
-		}
-		return false;
 	}
 	
 	/********
@@ -144,9 +91,6 @@ public class Serveur extends Thread {
 	 * 
 	 **************/
 	
-	public ArrayList<ServeurSecondaire> getListSecondary() {
-		return listSecondary;
-	}
 	public ServerSocket getSocket() {
 		return socket;
 	}

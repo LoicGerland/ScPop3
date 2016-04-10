@@ -1,4 +1,4 @@
-package pop3;
+package smtp;
 
 import java.awt.Color;
 import java.awt.event.ActionEvent;
@@ -34,9 +34,7 @@ public class Vue extends JFrame implements ActionListener {
 	private JButton btnStartStop;
 	private JLabel statusLabel;
 	private JLabel adresseLabel;
-	private JTextArea txtClientArea;
     private JTextArea txtInfoArea;
-    private JScrollPane scrollClientPane;
     private JScrollPane scrollInfoPane;
 	
 	private Serveur server;
@@ -66,12 +64,6 @@ public class Vue extends JFrame implements ActionListener {
 		btnStartStop.setBounds(445, 10, 100, 30);
 		btnStartStop.addActionListener(this);
 		contentPane.add(btnStartStop);
-		
-		txtClientArea = new JTextArea();
-        txtClientArea.setEditable(false);
-        scrollClientPane = new JScrollPane(txtClientArea);
-        scrollClientPane.setBounds(10, 50, 530, 100);
-		contentPane.add(scrollClientPane);
 		
 		txtInfoArea = new JTextArea();
 		txtInfoArea.setEditable(false);
@@ -128,7 +120,6 @@ public class Vue extends JFrame implements ActionListener {
 		statusLabel.setText("Statut : Arret");
 		statusLabel.setForeground(Color.red);
 		server.stopServeur();
-		this.update();
 	}
 
 	@Override
@@ -148,18 +139,5 @@ public class Vue extends JFrame implements ActionListener {
 	public void sop(String string) {
 		this.txtInfoArea.insert(string+"\n", 0);
 		System.out.println(string);
-	}
-	
-	/**
-	 * Mise à jour de la liste des clients dans l'interface
-	 */
-	public void update() {
-		this.txtClientArea.setText("");
-		for(ServeurSecondaire ss : server.getListSecondary()) {
-			this.txtClientArea.insert(
-					ss.getClientLogin() + " : " + ss.getClientSocket().getInetAddress().getHostAddress() + "\n", 0
-			);
-		}
-		
 	}
 }

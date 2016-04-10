@@ -1,4 +1,4 @@
-package pop3;
+package Commun;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

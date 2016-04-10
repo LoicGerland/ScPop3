@@ -1,4 +1,4 @@
-package pop3;
+package Commun;
 
 import java.util.ArrayList;
 

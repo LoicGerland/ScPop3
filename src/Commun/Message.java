@@ -1,4 +1,4 @@
-package pop3;
+package Commun;
 
 /**
  * Classe représentant un message POP3
