@@ -42,7 +42,8 @@ public class Commun {
 		INITIALISATION("Initialisation"),
 		CONNEXION("Connexion"),
 		PRESENTATION("Présentation"),
-		TRANSACTION("Transaction"),
+		DESTINATION("Destination"),
+		DESTINATIONMULTIPLE("Destination Multiple"),
 		LECTURE("Lecture");
 
 		private String nom = "";
@@ -84,6 +85,8 @@ public class Commun {
 	 */
 	public final static String SMTP_SERVER_READY = "220 Simple Mail Transfer Service Ready";
 	public final static String SMTP_SERVER_CLOSED = "221 Service closing transmission channel";
+	public final static String SMTP_354_START_MAIL = "354 Start mail input; end with <CRLF>.<CRLF>";
 	public final static String SMTP_501_ARGS = "501 Syntax error in parameters or arguments";
 	public final static String SMTP_500_UNKNOWN_COMMAND = "500 Syntax error, command unrecognized";
+	public final static String SMTP_503_SEQUENCE_COMMAND = "503 Bad sequence of commands";
 }

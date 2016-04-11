@@ -199,7 +199,7 @@ public class GestionFichiers {
 
 		try {
 			FileWriter fw = new FileWriter(filePath,true);
-			fw.write(message.getCorps());
+			fw.write(message.getMessageForSaving());
 		    fw.close();
 		} catch (FileNotFoundException fnfe) { System.out.println("Fichier de messages introuvable");
 		} catch (IOException e) { System.out.println("Erreur IO --" + e.toString()); }

@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 import Commun.Commun;
 import Commun.GestionFichiers;
@@ -119,8 +121,12 @@ public class ServeurSecondaire implements Runnable{
 				sortie = this.presentation(requete);
 				break;
 				
-			case TRANSACTION:
-				sortie = this.transaction(requete);
+			case DESTINATION:
+				sortie = this.destination(requete);
+				break;
+				
+			case DESTINATIONMULTIPLE:
+				sortie = this.destinationMultiple(requete);
 				break;
 				
 			case LECTURE:
@@ -128,7 +134,7 @@ public class ServeurSecondaire implements Runnable{
 				break;
 				
 			default: 
-				sortie = "500 Syntax error, command unrecognized";
+				sortie = Commun.SMTP_500_UNKNOWN_COMMAND;
 		}
 		
 		this.primaryServer.getView().sop(sortie.substring(0,3));
@@ -162,7 +168,7 @@ public class ServeurSecondaire implements Runnable{
 		
 		this.sender = requete.substring(requete.indexOf("<")+1, requete.indexOf(">"));
 		
-		this.setEtat(EtatSMTP.TRANSACTION);
+		this.setEtat(EtatSMTP.DESTINATION);
 		
 		return "250 OK";
 	}
@@ -180,6 +186,8 @@ public class ServeurSecondaire implements Runnable{
 		String receiver = requete.substring(requete.indexOf("<")+1, requete.indexOf(">"));
 		receivers.add(receiver);
 		
+		this.setEtat(EtatSMTP.DESTINATIONMULTIPLE);
+		
 		return "250 OK";
 	}
 	
@@ -191,7 +199,7 @@ public class ServeurSecondaire implements Runnable{
 		
 		this.setEtat(EtatSMTP.LECTURE);
 		
-		return "354 Start mail input; end with <CRLF>.<CRLF>";
+		return Commun.SMTP_354_START_MAIL;
 	}
 	
 	/**
@@ -201,15 +209,6 @@ public class ServeurSecondaire implements Runnable{
 	private String commandeQUIT() {
 		
 		this.running = false;
-		
-		System.out.println("Sender : "+this.sender);
-		for(String receiver : this.receivers) {
-			System.out.println("Receiver : "+receiver);
-			GestionFichiers.AjouterMessage(receiver, message);
-		}
-		System.out.println("Message : "+this.message.getCorps());
-		
-		
 		
 		return Commun.SMTP_SERVER_CLOSED;
 	}
@@ -234,7 +233,7 @@ public class ServeurSecondaire implements Runnable{
 			case "RCPT" :
 			case "MAIL" :
 			case "DATA" :
-				return Commun.SMTP_500_UNKNOWN_COMMAND;
+				return Commun.SMTP_503_SEQUENCE_COMMAND;
 			
 			default :
 				return Commun.SMTP_500_UNKNOWN_COMMAND;
@@ -261,7 +260,7 @@ public class ServeurSecondaire implements Runnable{
 			case "RCPT" :
 			case "EHLO" :
 			case "DATA" :
-				return Commun.SMTP_500_UNKNOWN_COMMAND;
+				return Commun.SMTP_503_SEQUENCE_COMMAND;
 			
 			default :
 				return Commun.SMTP_500_UNKNOWN_COMMAND;
@@ -269,11 +268,38 @@ public class ServeurSecondaire implements Runnable{
 	}
 	
 	/**
-	 * Traitement de la commande lorsque le serveur est dans l'état TRANSACTION
+	 * Traitement de la commande lorsque le serveur est dans l'état DESTINATION
 	 * @param requete
 	 * @return String sortie
 	 */
-	private String transaction(String requete) {
+	private String destination(String requete) {
+		
+		String [] params = requete.split(" ");
+		
+		switch(params[0]) {
+			
+		case "RCPT" :
+			return commandeRCPT(requete);
+			
+		case "QUIT" :
+			return commandeQUIT();
+		
+		case "DATA" :
+		case "EHLO" :
+		case "MAIL" :
+			return Commun.SMTP_503_SEQUENCE_COMMAND;
+			
+		default :
+			return Commun.SMTP_500_UNKNOWN_COMMAND;
+		}
+	}
+	
+	/**
+	 * Traitement de la commande lorsque le serveur est dans l'état DESTINATION MULTIPLE
+	 * @param requete
+	 * @return String sortie
+	 */
+	private String destinationMultiple(String requete) {
 		
 		String [] params = requete.split(" ");
 		
@@ -290,7 +316,7 @@ public class ServeurSecondaire implements Runnable{
 		
 		case "EHLO" :
 		case "MAIL" :
-			return Commun.SMTP_500_UNKNOWN_COMMAND;
+			return Commun.SMTP_503_SEQUENCE_COMMAND;
 			
 		default :
 			return Commun.SMTP_500_UNKNOWN_COMMAND;
@@ -304,7 +330,7 @@ public class ServeurSecondaire implements Runnable{
 	 */
 	private String lecture(String requete) {
 		
-		this.message.setCorps(this.message.getCorps()+"\n"+requete);
+		this.message.setCorps(requete);
 		
 		while(!requete.equals(".")) {
 			try {
@@ -314,7 +340,21 @@ public class ServeurSecondaire implements Runnable{
 			} catch (IOException e) { e.printStackTrace(); }
 		}
 		
-		this.setEtat(EtatSMTP.TRANSACTION);
+		Date aujourdhui = new Date();
+		SimpleDateFormat formater = new SimpleDateFormat("dd/MM/yy");
+		this.message.setDate("orig-date:"+formater.format(aujourdhui)+"\n");
+		
+		System.out.println("Sender : "+this.sender);
+		this.message.setSender("from:"+this.sender+"\n");
+		
+		for(String receiver : this.receivers) {
+			System.out.println("Receiver : "+receiver);
+			this.message.setReceiver("to:"+receiver+"\n");
+			GestionFichiers.AjouterMessage(receiver, message);
+		}
+		System.out.println("Message : "+this.message.getCorps());
+		
+		this.setEtat(EtatSMTP.PRESENTATION);
 		
 		return "250 OK";
 	}

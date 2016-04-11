@@ -20,6 +20,21 @@ public class Message {
 	/**
 	 * Contenu du message
 	 */
+	private String date;
+	
+	/**
+	 * Contenu du message
+	 */
+	private String sender;
+	
+	/**
+	 * Contenu du message
+	 */
+	private String receiver;
+	
+	/**
+	 * Contenu du message
+	 */
 	private String corps;
 	
 	/**
@@ -27,6 +42,9 @@ public class Message {
 	 */
 	private Boolean marque;
 	
+	public String getMessageForSaving() {
+		return this.date+this.sender+this.receiver+this.corps;
+	}
 	
 	/********
 	 * 
@@ -50,6 +68,18 @@ public class Message {
 		return marque;
 	}
 	
+	public String getDate() {
+		return date;
+	}
+
+	public String getSender() {
+		return sender;
+	}
+
+	public String getReceiver() {
+		return receiver;
+	}
+
 	/********
 	 * 
 	 * SETTER
@@ -70,5 +100,17 @@ public class Message {
 	
 	public void setMarque(Boolean marque) {
 		this.marque = marque;
-	}	
+	}
+	
+	public void setDate(String date) {
+		this.date = date;
+	}
+	
+	public void setSender(String sender) {
+		this.sender = sender;
+	}
+
+	public void setReceiver(String receiver) {
+		this.receiver = receiver;
+	}
 }
