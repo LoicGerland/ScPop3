@@ -42,7 +42,7 @@ public class Vue extends JFrame implements ActionListener {
 	public Vue() {
 		setTitle("Serveur");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setSize(570, 420);
+		setSize(570, 320);
 		setLocationRelativeTo(null);
         
 		contentPane = new JPanel();
@@ -68,7 +68,7 @@ public class Vue extends JFrame implements ActionListener {
 		txtInfoArea = new JTextArea();
 		txtInfoArea.setEditable(false);
         scrollInfoPane = new JScrollPane(txtInfoArea);
-        scrollInfoPane.setBounds(10, 150, 530, 220);
+        scrollInfoPane.setBounds(10, 40, 530, 220);
 		contentPane.add(scrollInfoPane);
 	}
 	

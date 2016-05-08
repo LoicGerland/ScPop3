@@ -64,6 +64,8 @@ public class ServeurSecondaire implements Runnable{
 	 */
 	public void run() {
 		
+		this.primaryServer.getView().sop("Connexion d'un client : "+clientSocket.getInetAddress().getHostAddress());
+		
 		sendMessage(Commun.SMTP_SERVER_READY);
 		
 		this.setEtat(EtatSMTP.CONNEXION);
@@ -111,6 +113,8 @@ public class ServeurSecondaire implements Runnable{
 		
 		String sortie = "";
 		
+		this.primaryServer.getView().sop("Client "+clientSocket.getInetAddress().getHostAddress()+" : "+requete);
+		
 		switch(this.etat) {
 		
 			case CONNEXION:
@@ -153,6 +157,8 @@ public class ServeurSecondaire implements Runnable{
 		
 		this.setEtat(EtatSMTP.PRESENTATION);
 		
+		this.primaryServer.getView().sop("Client "+clientSocket.getInetAddress().getHostAddress()+" depuis domaine "+params[1]);
+		
 		return Commun.SMTP_250_HELLO+params[1];
 	}
 	
@@ -171,6 +177,8 @@ public class ServeurSecondaire implements Runnable{
 		this.message = new Message();
 		this.receivers.clear();
 		this.sender = senderAdress;
+		
+		this.primaryServer.getView().sop("Client "+clientSocket.getInetAddress().getHostAddress()+" depuis adresse "+senderAdress);
 		
 		this.setEtat(EtatSMTP.DESTINATION);
 		
@@ -355,15 +363,14 @@ public class ServeurSecondaire implements Runnable{
 		SimpleDateFormat formater = new SimpleDateFormat("dd/MM/yy");
 		this.message.setDate("orig-date:"+formater.format(aujourdhui)+"\n");
 		
-		System.out.println("Sender : "+this.sender);
 		this.message.setSender("from:"+this.sender+"\n");
 		
 		for(String receiver : this.receivers) {
-			System.out.println("Receiver : "+receiver);
 			this.message.setReceiver("to:"+receiver+"\n");
 			GestionFichiers.AjouterMessage(receiver, message);
 		}
-		System.out.println("Message : "+this.message.getCorps());
+		
+		this.primaryServer.getView().sop("Client "+clientSocket.getInetAddress().getHostAddress()+"("+this.sender+") a envoyé un message");
 		
 		this.setEtat(EtatSMTP.PRESENTATION);
 		
@@ -396,7 +403,7 @@ public class ServeurSecondaire implements Runnable{
 	
 	public void setEtat(EtatSMTP etat) {
 		this.etat = etat;
-		System.out.println("Etat du serveur : " + this.etat);
+		this.primaryServer.getView().sop("Etat du serveur : " + this.etat);
 	}
 }
 
