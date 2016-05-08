@@ -189,10 +189,12 @@ public class ServeurSecondaire implements Runnable{
 		
 		String receiver = requete.substring(requete.indexOf("<")+1, requete.indexOf(">"));
 		
-		if(!receiver.contains("@"+Commun.DOMAIN_SMTP))
-			return Commun.SMTP_551_NOT_LOCAL+" <"+receiver.substring(requete.indexOf("@")+1, requete.length())+">";
+		if(!receiver.contains(Commun.DOMAIN_SMTP))
+			return Commun.SMTP_551_NOT_LOCAL;
 		
-		if(!GestionFichiers.LireAuthentification(receiver.substring(0, requete.indexOf("@")), null))
+		receiver = receiver.substring(0, receiver.indexOf("@"));
+		
+		if(!GestionFichiers.LireAuthentification(receiver, null))
 			return Commun.SMTP_553_UNKNOWN_USER;
 		
 		receivers.add(receiver);
