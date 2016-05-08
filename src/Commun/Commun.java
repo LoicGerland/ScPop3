@@ -35,6 +35,11 @@ public class Commun {
 	}
 	
 	/**
+	 * Domaine SMTP supporté
+	 */
+	public final static String DOMAIN_SMTP = "gerletourn.com";
+	
+	/**
 	 * Etat du serveur SMTP
 	 */
 	public enum EtatSMTP {
@@ -84,9 +89,13 @@ public class Commun {
 	 * Messages de retour du serveur au client SMTP
 	 */
 	public final static String SMTP_SERVER_READY = "220 Simple Mail Transfer Service Ready";
-	public final static String SMTP_SERVER_CLOSED = "221 Service closing transmission channel";
-	public final static String SMTP_354_START_MAIL = "354 Start mail input; end with <CRLF>.<CRLF>";
-	public final static String SMTP_501_ARGS = "501 Syntax error in parameters or arguments";
-	public final static String SMTP_500_UNKNOWN_COMMAND = "500 Syntax error, command unrecognized";
-	public final static String SMTP_503_SEQUENCE_COMMAND = "503 Bad sequence of commands";
+	public final static String SMTP_SERVER_CLOSED = "221 Fermeture du canal de transmission";
+	public final static String SMTP_250_HELLO = "250 Bonjour ";
+	public final static String SMTP_354_START_MAIL = "354 Début du message ; fin avec <CRLF>.<CRLF>";
+	public final static String SMTP_501_ARGS = "501 Erreur de syntaxe dans les paramètres ou les arguments";
+	public final static String SMTP_500_UNKNOWN_COMMAND = "500 Erreur de syntaxe, commande non reconnue";
+	public final static String SMTP_503_SEQUENCE_COMMAND = "503 Mauvaise séquence de commandes";
+	public final static String SMTP_504_MISSING_ARGS = "504 Paramètre(s) manquant(s)";
+	public final static String SMTP_553_UNKNOWN_USER = "553 Action demandée non effectuée : nom de boîte à lettres interdit";
+	public final static String SMTP_551_NOT_LOCAL = "551 Usager non local. Prière d’essayer";
 }

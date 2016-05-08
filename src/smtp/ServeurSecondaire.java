@@ -149,11 +149,11 @@ public class ServeurSecondaire implements Runnable{
 	private String commandeEHLO(String [] params) {
 		
 		if(params.length < 2)
-			return Commun.SMTP_501_ARGS;
+			return Commun.SMTP_504_MISSING_ARGS;
 		
 		this.setEtat(EtatSMTP.PRESENTATION);
 		
-		return "250 srv.polytech.com";
+		return Commun.SMTP_250_HELLO+params[1];
 	}
 	
 	/**
@@ -166,7 +166,11 @@ public class ServeurSecondaire implements Runnable{
 		if(!requete.contains("<") || !requete.contains(">"))
 			return Commun.SMTP_501_ARGS;
 		
-		this.sender = requete.substring(requete.indexOf("<")+1, requete.indexOf(">"));
+		String senderAdress = requete.substring(requete.indexOf("<")+1, requete.indexOf(">"));
+		
+		this.message = new Message();
+		this.receivers.clear();
+		this.sender = senderAdress;
 		
 		this.setEtat(EtatSMTP.DESTINATION);
 		
@@ -180,14 +184,19 @@ public class ServeurSecondaire implements Runnable{
 	 */
 	private String commandeRCPT(String requete) {
 		
-		if(!requete.contains("<") || !requete.contains(">"))
+		if(!requete.contains("<") || !requete.contains(">") || !requete.contains("@"))
 			return Commun.SMTP_501_ARGS;
 		
 		String receiver = requete.substring(requete.indexOf("<")+1, requete.indexOf(">"));
+		
+		if(!receiver.contains("@"+Commun.DOMAIN_SMTP))
+			return Commun.SMTP_551_NOT_LOCAL+" <"+receiver.substring(requete.indexOf("@")+1, requete.length())+">";
+		
+		if(!GestionFichiers.LireAuthentification(receiver.substring(0, requete.indexOf("@")), null))
+			return Commun.SMTP_553_UNKNOWN_USER;
+		
 		receivers.add(receiver);
-		
 		this.setEtat(EtatSMTP.DESTINATIONMULTIPLE);
-		
 		return "250 OK";
 	}
 	
