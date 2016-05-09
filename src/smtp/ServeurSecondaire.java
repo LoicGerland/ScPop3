@@ -43,6 +43,7 @@ public class ServeurSecondaire implements Runnable{
 		this.primaryServer = serveur;
 		this.clientSocket = clientSocket;
 		
+		//Initialisation du serveur secondaire
 		this.running = true;
 		this.setEtat(EtatSMTP.INITIALISATION);
 		this.sender = "Inconnu";
@@ -59,7 +60,7 @@ public class ServeurSecondaire implements Runnable{
 	
 	/**
 	 * Lancement du serveur secondaire
-	 * Envoi du message de bienvenue avec le timbre-à-date
+	 * Envoi du message de bienvenue
 	 * Lecture du flux entrant pour traiter les commande du client
 	 */
 	public void run() {
@@ -71,7 +72,7 @@ public class ServeurSecondaire implements Runnable{
 		this.setEtat(EtatSMTP.CONNEXION);
 		
 		while(this.running) {
-		String requete;
+			String requete;
 			try {
 				if((requete = this.input.readLine()) != null){
 					this.traiterCommande(requete);
@@ -83,7 +84,6 @@ public class ServeurSecondaire implements Runnable{
 		}
 		
 		//Lorsque le client envoie un QUIT, la socket est fermée
-		//et la vue n'affiche plus le client
 		try {
 			this.clientSocket.close();
 		} catch (IOException e) {
@@ -136,7 +136,7 @@ public class ServeurSecondaire implements Runnable{
 			case LECTURE:
 				sortie = this.lecture(requete);
 				break;
-				
+			
 			default: 
 				sortie = Commun.SMTP_500_UNKNOWN_COMMAND;
 		}
@@ -151,10 +151,12 @@ public class ServeurSecondaire implements Runnable{
 	 * @return String message
 	 */
 	private String commandeEHLO(String [] params) {
-		
+
+		//Si il manque le 2ème paramètre, on envoi un message d'erreur
 		if(params.length < 2)
 			return Commun.SMTP_504_MISSING_ARGS;
-		
+
+		//Si le serveur est indisponible, on envoi un message d'erreur
 		if(this.primaryServer.getLocked())
 			return Commun.SMTP_550_UNAVAILABLE;
 		
@@ -172,14 +174,17 @@ public class ServeurSecondaire implements Runnable{
 	 */
 	private String commandeMAIL(String requete) {
 		
+		//Si la syntaxe de la commande est fausse, on envoi un message d'erreur
 		if(!requete.contains("<") || !requete.contains(">"))
 			return Commun.SMTP_553_WRONG_SYNTAX;
-		
+
+		//Si le serveur est indisponible, on envoi un message d'erreur
 		if(this.primaryServer.getLocked())
 			return Commun.SMTP_550_UNAVAILABLE;
 		
 		String senderAdress = requete.substring(requete.indexOf("<")+1, requete.indexOf(">"));
-		
+
+		//Si l'adresse mail dépasse la taille autorisée, on envoi un message d'erreur
 		if(senderAdress.length() > Commun.MAX_MAIL_SIZE)
 			return Commun.SMTP_552_MEMORY_ERROR;
 		
@@ -201,22 +206,27 @@ public class ServeurSecondaire implements Runnable{
 	 */
 	private String commandeRCPT(String requete) {
 		
+		//Si la syntaxe de la commande est fausse, on envoi un message d'erreur
 		if(!requete.contains("<") || !requete.contains(">") || !requete.contains("@"))
 			return Commun.SMTP_553_WRONG_SYNTAX;
 		
+		//Si le serveur est indisponible, on envoi un message d'erreur
 		if(this.primaryServer.getLocked())
 			return Commun.SMTP_550_UNAVAILABLE;
 		
 		String receiver = requete.substring(requete.indexOf("<")+1, requete.indexOf(">"));
 		
+		//Si le domaine n'est pas le bon, on envoi un message d'erreur
 		if(!receiver.contains(Commun.DOMAIN_SMTP))
 			return Commun.SMTP_551_NOT_LOCAL;
 		
+		//Si l'adresse mail dépasse la taille autorisée, on envoi un message d'erreur
 		if(receiver.length() > Commun.MAX_MAIL_SIZE)
 			return Commun.SMTP_552_MEMORY_ERROR;
 		
 		receiver = receiver.substring(0, receiver.indexOf("@"));
 		
+		//Si la boite n'existe pas, on envoi un message d'erreur
 		if(!GestionFichiers.LireAuthentification(receiver, null))
 			return Commun.SMTP_550_UNAVAILABLE;
 		
@@ -265,11 +275,13 @@ public class ServeurSecondaire implements Runnable{
 			case "QUIT" :
 				return commandeQUIT();
 				
+			//Commande inattendue
 			case "RCPT" :
 			case "MAIL" :
 			case "DATA" :
 				return Commun.SMTP_503_SEQUENCE_COMMAND;
 			
+			//Commande inconnue
 			default :
 				return Commun.SMTP_500_UNKNOWN_COMMAND;
 		}
@@ -291,12 +303,14 @@ public class ServeurSecondaire implements Runnable{
 				
 			case "QUIT" :
 				return commandeQUIT();
-				
+			
+			//Commande inattendue
 			case "RCPT" :
 			case "EHLO" :
 			case "DATA" :
 				return Commun.SMTP_503_SEQUENCE_COMMAND;
 			
+			//Commande inconnue
 			default :
 				return Commun.SMTP_500_UNKNOWN_COMMAND;
 		}
@@ -313,19 +327,21 @@ public class ServeurSecondaire implements Runnable{
 		
 		switch(params[0]) {
 			
-		case "RCPT" :
-			return commandeRCPT(requete);
+			case "RCPT" :
+				return commandeRCPT(requete);
+				
+			case "QUIT" :
+				return commandeQUIT();
 			
-		case "QUIT" :
-			return commandeQUIT();
-		
-		case "DATA" :
-		case "EHLO" :
-		case "MAIL" :
-			return Commun.SMTP_503_SEQUENCE_COMMAND;
+			//Commande inattendue
+			case "DATA" :
+			case "EHLO" :
+			case "MAIL" :
+				return Commun.SMTP_503_SEQUENCE_COMMAND;
 			
-		default :
-			return Commun.SMTP_500_UNKNOWN_COMMAND;
+			//Commande inconnue
+			default :
+				return Commun.SMTP_500_UNKNOWN_COMMAND;
 		}
 	}
 	
@@ -340,21 +356,23 @@ public class ServeurSecondaire implements Runnable{
 		
 		switch(params[0]) {
 			
-		case "RCPT" :
-			return commandeRCPT(requete);
+			case "RCPT" :
+				return commandeRCPT(requete);
+				
+			case "DATA" :
+				return commandeDATA();
+				
+			case "QUIT" :
+				return commandeQUIT();
 			
-		case "DATA" :
-			return commandeDATA();
+			//Commande inattendue
+			case "EHLO" :
+			case "MAIL" :
+				return Commun.SMTP_503_SEQUENCE_COMMAND;
 			
-		case "QUIT" :
-			return commandeQUIT();
-		
-		case "EHLO" :
-		case "MAIL" :
-			return Commun.SMTP_503_SEQUENCE_COMMAND;
-			
-		default :
-			return Commun.SMTP_500_UNKNOWN_COMMAND;
+			//Commande inconnue
+			default :
+				return Commun.SMTP_500_UNKNOWN_COMMAND;
 		}
 	}
 	
@@ -367,23 +385,28 @@ public class ServeurSecondaire implements Runnable{
 		
 		this.message.setCorps(requete);
 		
+		//Tant qu'il n'y a pas le ".", on enregistre le message
 		while(!requete.equals(".")) {
 			try {
 				if((requete = this.input.readLine()) != null){
 					this.message.setCorps(this.message.getCorps()+"\n"+requete);
 					
+					//Si le message dépasse la taille autorisée, on envoi un message d'erreur
 					if(this.message.getCorps().length() > Commun.MAX_MESSAGE_SIZE)
 						return Commun.SMTP_552_MEMORY_ERROR;
 				}
 			} catch (IOException e) { e.printStackTrace(); }
 		}
 		
+		//Ajout de la date au message
 		Date aujourdhui = new Date();
 		SimpleDateFormat formater = new SimpleDateFormat("dd/MM/yy");
 		this.message.setDate("Orig-date:"+formater.format(aujourdhui)+"\n");
 		
+		//Ajout de l'emetteur
 		this.message.setSender("From:"+this.sender+"\n");
 		
+		//Envoi du message pour chaque destinataire
 		for(String receiver : this.receivers) {
 			this.message.setReceiver("To:"+receiver+"@"+Commun.DOMAIN_SMTP+"\n");
 			GestionFichiers.AjouterMessage(receiver, message);

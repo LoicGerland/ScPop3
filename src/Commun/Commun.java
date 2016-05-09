@@ -15,7 +15,7 @@ public class Commun {
 	/**
 	 * Port du serveur SMTP
 	 */
-	public final static int PORT_SMTP = 25;//1027;
+	public final static int PORT_SMTP = 1027;
 	
 	/**
 	 * Etat du serveur POP3
