@@ -32,6 +32,7 @@ public class Vue extends JFrame implements ActionListener {
 	
 	private JPanel contentPane;
 	private JButton btnStartStop;
+	private JButton btnLocked;
 	private JLabel statusLabel;
 	private JLabel adresseLabel;
     private JTextArea txtInfoArea;
@@ -54,6 +55,12 @@ public class Vue extends JFrame implements ActionListener {
 		adresseLabel.setBounds(10, 15, 200, 20);
 		contentPane.add(adresseLabel);
 		
+		btnLocked = new JButton("Bloquer");
+		btnLocked.setBounds(200, 10, 100, 30);
+		btnLocked.addActionListener(this);
+		btnLocked.setEnabled(false);
+		contentPane.add(btnLocked);
+		
         statusLabel = new JLabel("Statut : Arret");
         statusLabel.setForeground(Color.red);
         statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -68,7 +75,7 @@ public class Vue extends JFrame implements ActionListener {
 		txtInfoArea = new JTextArea();
 		txtInfoArea.setEditable(false);
         scrollInfoPane = new JScrollPane(txtInfoArea);
-        scrollInfoPane.setBounds(10, 40, 530, 220);
+        scrollInfoPane.setBounds(10, 50, 530, 220);
 		contentPane.add(scrollInfoPane);
 	}
 	
@@ -108,6 +115,7 @@ public class Vue extends JFrame implements ActionListener {
 			statusLabel.setForeground(Color.green);
 			this.findMyIp();
 			server.start();
+			btnLocked.setEnabled(true);
 		}
 	}
 	
@@ -120,6 +128,7 @@ public class Vue extends JFrame implements ActionListener {
 		statusLabel.setText("Statut : Arret");
 		statusLabel.setForeground(Color.red);
 		server.stopServeur();
+		btnLocked.setEnabled(false);
 	}
 
 	@Override
@@ -130,6 +139,11 @@ public class Vue extends JFrame implements ActionListener {
 			} else {
 				startServer();
 			}
+		} else if (e.getSource() == btnLocked) {
+			server.setLocked(!server.getLocked());
+			btnLocked.setText("Bloquer");
+			if(server.getLocked())
+				btnLocked.setText("Débloquer");
 		}
 	}
 

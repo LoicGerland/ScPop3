@@ -17,6 +17,7 @@ public class Serveur extends Thread {
 	private Vue view;
 	private Boolean running;
 	private ServerSocket socket;
+	private Boolean locked;
 
 	/**
 	 * Constructeur
@@ -24,6 +25,7 @@ public class Serveur extends Thread {
 	 */
 	public Serveur(Vue vue) {
 		
+		this.setLocked(false);
 		this.view = vue;
 		this.running = false;
 		try {
@@ -99,6 +101,14 @@ public class Serveur extends Thread {
 	}
 	public Boolean isRunning() {
 		return running;
+	}
+
+	public Boolean getLocked() {
+		return locked;
+	}
+
+	public void setLocked(Boolean locked) {
+		this.locked = locked;
 	}
 }
 

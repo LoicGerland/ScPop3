@@ -10,7 +10,7 @@ public class Commun {
 	/**
 	 * Port du serveur POP3
 	 */
-	public final static int PORT_POP3S = 1026;
+	public final static int PORT_POP3S = 2500;
 	
 	/**
 	 * Port du serveur SMTP
@@ -38,6 +38,16 @@ public class Commun {
 	 * Domaine SMTP supporté
 	 */
 	public final static String DOMAIN_SMTP = "gerletourn.com";
+	
+	/**
+	 * Taille maximum d'une adresse mail
+	 */
+	public final static int MAX_MAIL_SIZE = 256;
+	
+	/**
+	 * Taille maximum d'un message
+	 */
+	public final static int MAX_MESSAGE_SIZE = 64000;
 	
 	/**
 	 * Etat du serveur SMTP
@@ -96,6 +106,8 @@ public class Commun {
 	public final static String SMTP_500_UNKNOWN_COMMAND = "500 Erreur de syntaxe, commande non reconnue";
 	public final static String SMTP_503_SEQUENCE_COMMAND = "503 Mauvaise séquence de commandes";
 	public final static String SMTP_504_MISSING_ARGS = "504 Paramètre(s) manquant(s)";
-	public final static String SMTP_553_UNKNOWN_USER = "553 Action demandée non effectuée : nom de boîte à lettres interdit";
-	public final static String SMTP_551_NOT_LOCAL = "551 Usager non local. Prière d’essayer";
+	public final static String SMTP_553_WRONG_SYNTAX = "553 Action demandée non effectuée : nom de boîte à lettres interdit (syntaxe incorrecte)";
+	public final static String SMTP_551_NOT_LOCAL = "551 Usager non local";
+	public final static String SMTP_550_UNAVAILABLE = "550 Action demandée non effectuée : boîte à lettres indisponible";
+	public final static String SMTP_552_MEMORY_ERROR = "552 Action interrompue : allocation de mémoire dépassée";
 }

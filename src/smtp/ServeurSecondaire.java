@@ -155,6 +155,9 @@ public class ServeurSecondaire implements Runnable{
 		if(params.length < 2)
 			return Commun.SMTP_504_MISSING_ARGS;
 		
+		if(this.primaryServer.getLocked())
+			return Commun.SMTP_550_UNAVAILABLE;
+		
 		this.setEtat(EtatSMTP.PRESENTATION);
 		
 		this.primaryServer.getView().sop("Client "+clientSocket.getInetAddress().getHostAddress()+" depuis domaine "+params[1]);
@@ -170,9 +173,15 @@ public class ServeurSecondaire implements Runnable{
 	private String commandeMAIL(String requete) {
 		
 		if(!requete.contains("<") || !requete.contains(">"))
-			return Commun.SMTP_501_ARGS;
+			return Commun.SMTP_553_WRONG_SYNTAX;
+		
+		if(this.primaryServer.getLocked())
+			return Commun.SMTP_550_UNAVAILABLE;
 		
 		String senderAdress = requete.substring(requete.indexOf("<")+1, requete.indexOf(">"));
+		
+		if(senderAdress.length() > Commun.MAX_MAIL_SIZE)
+			return Commun.SMTP_552_MEMORY_ERROR;
 		
 		this.message = new Message();
 		this.receivers.clear();
@@ -193,7 +202,10 @@ public class ServeurSecondaire implements Runnable{
 	private String commandeRCPT(String requete) {
 		
 		if(!requete.contains("<") || !requete.contains(">") || !requete.contains("@"))
-			return Commun.SMTP_501_ARGS;
+			return Commun.SMTP_553_WRONG_SYNTAX;
+		
+		if(this.primaryServer.getLocked())
+			return Commun.SMTP_550_UNAVAILABLE;
 		
 		String receiver = requete.substring(requete.indexOf("<")+1, requete.indexOf(">"));
 		
@@ -203,7 +215,7 @@ public class ServeurSecondaire implements Runnable{
 		receiver = receiver.substring(0, receiver.indexOf("@"));
 		
 		if(!GestionFichiers.LireAuthentification(receiver, null))
-			return Commun.SMTP_553_UNKNOWN_USER;
+			return Commun.SMTP_550_UNAVAILABLE;
 		
 		receivers.add(receiver);
 		this.setEtat(EtatSMTP.DESTINATIONMULTIPLE);
@@ -356,6 +368,9 @@ public class ServeurSecondaire implements Runnable{
 			try {
 				if((requete = this.input.readLine()) != null){
 					this.message.setCorps(this.message.getCorps()+"\n"+requete);
+					
+					if(this.message.getCorps().length() > Commun.MAX_MESSAGE_SIZE)
+						return Commun.SMTP_552_MEMORY_ERROR;
 				}
 			} catch (IOException e) { e.printStackTrace(); }
 		}
