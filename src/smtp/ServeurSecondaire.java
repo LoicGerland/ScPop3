@@ -212,6 +212,9 @@ public class ServeurSecondaire implements Runnable{
 		if(!receiver.contains(Commun.DOMAIN_SMTP))
 			return Commun.SMTP_551_NOT_LOCAL;
 		
+		if(receiver.length() > Commun.MAX_MAIL_SIZE)
+			return Commun.SMTP_552_MEMORY_ERROR;
+		
 		receiver = receiver.substring(0, receiver.indexOf("@"));
 		
 		if(!GestionFichiers.LireAuthentification(receiver, null))
