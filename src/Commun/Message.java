@@ -43,7 +43,7 @@ public class Message {
 	private Boolean marque;
 	
 	public String getMessageForSaving() {
-		return this.date+this.sender+this.receiver+this.corps;
+		return this.date+this.sender+this.receiver+this.corps+"\n";
 	}
 	
 	/********

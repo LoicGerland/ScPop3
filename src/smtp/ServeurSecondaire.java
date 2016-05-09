@@ -207,6 +207,7 @@ public class ServeurSecondaire implements Runnable{
 		
 		receivers.add(receiver);
 		this.setEtat(EtatSMTP.DESTINATIONMULTIPLE);
+		
 		return "250 OK";
 	}
 	
@@ -361,12 +362,12 @@ public class ServeurSecondaire implements Runnable{
 		
 		Date aujourdhui = new Date();
 		SimpleDateFormat formater = new SimpleDateFormat("dd/MM/yy");
-		this.message.setDate("orig-date:"+formater.format(aujourdhui)+"\n");
+		this.message.setDate("Orig-date:"+formater.format(aujourdhui)+"\n");
 		
-		this.message.setSender("from:"+this.sender+"\n");
+		this.message.setSender("From:"+this.sender+"\n");
 		
 		for(String receiver : this.receivers) {
-			this.message.setReceiver("to:"+receiver+"\n");
+			this.message.setReceiver("To:"+receiver+"@"+Commun.DOMAIN_SMTP+"\n");
 			GestionFichiers.AjouterMessage(receiver, message);
 		}
 		
