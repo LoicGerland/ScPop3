@@ -412,7 +412,7 @@ public class ServeurSecondaire implements Runnable{
 			GestionFichiers.AjouterMessage(receiver, message);
 		}
 		
-		this.primaryServer.getView().sop("Client "+clientSocket.getInetAddress().getHostAddress()+"("+this.sender+") a envoyé un message");
+		this.primaryServer.getView().sop("Client "+clientSocket.getInetAddress().getHostAddress()+" ("+this.sender+") a envoyé un message");
 		
 		this.setEtat(EtatSMTP.PRESENTATION);
 		

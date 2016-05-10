@@ -42,7 +42,7 @@ public class Serveur extends Thread {
 	public void run() {
 
 		this.running = true;
-		this.view.sop("Lancement du serveur");
+		this.view.sop("Lancement du serveur sur le domaine "+Commun.DOMAIN_SMTP);
 		
 		try {
 			while(this.running) {

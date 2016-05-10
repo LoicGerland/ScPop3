@@ -41,7 +41,7 @@ public class Vue extends JFrame implements ActionListener {
 	private Serveur server;
 
 	public Vue() {
-		setTitle("Serveur");
+		setTitle("Serveur SMTP");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(570, 320);
 		setLocationRelativeTo(null);
