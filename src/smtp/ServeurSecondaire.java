@@ -46,9 +46,7 @@ public class ServeurSecondaire implements Runnable{
 		//Initialisation du serveur secondaire
 		this.running = true;
 		this.setEtat(EtatSMTP.INITIALISATION);
-		this.sender = "Inconnu";
-		this.receivers = new ArrayList<String>();
-		this.message = new Message();
+		this.reset();
 		
 		try {
 			this.output = new BufferedWriter( new OutputStreamWriter(clientSocket.getOutputStream()));
@@ -56,6 +54,15 @@ public class ServeurSecondaire implements Runnable{
 		} catch (IOException e) {
 			this.primaryServer.getView().sop(Commun.ERROR_FLUX_INSTANTIATION);
 		}
+	}
+	
+	/**
+	 * Réinitialisation de l'émetteur, des destinataires et du message
+	 */
+	private void reset() {
+		this.sender = "";
+		this.receivers = new ArrayList<String>();
+		this.message = new Message();
 	}
 	
 	/**
@@ -167,6 +174,21 @@ public class ServeurSecondaire implements Runnable{
 		return Commun.SMTP_250_HELLO+params[1];
 	}
 	
+	
+	/**
+	 * Traitement de la commande RSET
+	 * @param params
+	 * @return String message
+	 */
+	private String commandeRSET() {
+		
+		this.reset();
+		
+		this.setEtat(EtatSMTP.PRESENTATION);
+		
+		return "250 OK";
+	}
+	
 	/**
 	 * Traitement de la commande MAIL
 	 * @param params
@@ -188,8 +210,7 @@ public class ServeurSecondaire implements Runnable{
 		if(senderAdress.length() > Commun.MAX_MAIL_SIZE)
 			return Commun.SMTP_552_MEMORY_ERROR;
 		
-		this.message = new Message();
-		this.receivers.clear();
+		this.reset();
 		this.sender = senderAdress;
 		
 		this.primaryServer.getView().sop("Client "+clientSocket.getInetAddress().getHostAddress()+" depuis adresse "+senderAdress);
@@ -272,6 +293,9 @@ public class ServeurSecondaire implements Runnable{
 			case "EHLO" :
 				return commandeEHLO(params);
 				
+			case "RSET" :
+				return commandeRSET();
+				
 			case "QUIT" :
 				return commandeQUIT();
 				
@@ -298,6 +322,9 @@ public class ServeurSecondaire implements Runnable{
 		
 		switch(params[0]) {
 			
+			case "RSET" :
+				return commandeRSET();
+				
 			case "MAIL" :
 				return commandeMAIL(requete);
 				
@@ -327,6 +354,9 @@ public class ServeurSecondaire implements Runnable{
 		
 		switch(params[0]) {
 			
+			case "RSET" :
+				return commandeRSET();
+			
 			case "RCPT" :
 				return commandeRCPT(requete);
 				
@@ -355,6 +385,9 @@ public class ServeurSecondaire implements Runnable{
 		String [] params = requete.split(" ");
 		
 		switch(params[0]) {
+			
+			case "RSET" :
+				return commandeRSET();
 			
 			case "RCPT" :
 				return commandeRCPT(requete);
@@ -414,6 +447,7 @@ public class ServeurSecondaire implements Runnable{
 		
 		this.primaryServer.getView().sop("Client "+clientSocket.getInetAddress().getHostAddress()+" ("+this.sender+") a envoyé un message");
 		
+		this.reset();
 		this.setEtat(EtatSMTP.PRESENTATION);
 		
 		return "250 OK";
